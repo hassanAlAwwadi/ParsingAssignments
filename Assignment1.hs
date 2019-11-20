@@ -108,7 +108,7 @@ printTime (Time (Hour h) (Minute m) (Second s)) =
     in hb ++ show h ++ mb ++ show m ++ sb ++ show s
 
 printDateTime :: Bool -> String
-printutc Fale = ""
+printutc False = ""
 printutc True = "Z"
 
 -- Exercise 4
@@ -121,7 +121,8 @@ checkDateTime (DateTime (Date d) (Time t) _) = checkDate d && checkTime t
 checkDate :: Date -> Bool
 checkDate (Date (Year y) (Month m) (Day d))
     | d < 1  = False
-    | m > 12 = False
+    | m < 1 || m > 12 = False
+    | y < 0 ||  y > 9999 = False
     | m `elem` [1, 3, 5, 7, 8, 10, 12] = d <= 31
     | m `elem` [4, 6, 9, 11] = d <= 30
     | m == 2 = if leapYear then d <= 29 else d <= 28 where
