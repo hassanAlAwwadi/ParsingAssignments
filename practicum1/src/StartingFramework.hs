@@ -4,6 +4,7 @@ module StartingFramework where
 
 import Prelude hiding ((*>),sequence,(<$))
 import Data.List (sort)
+import Data.Maybe(listToMaybe)
 import ParseLib.Abstract
 import System.Environment
 
@@ -70,23 +71,24 @@ parseDateTime = DateTime <$>
 
 parseDate :: Parser Char Date
 parseDate =  Date <$>
-    (read <$> sequence (repeat 4 idDigit))  <*>
-    (read <$> sequence (repeat 2 idDigit))  <*>
-    (read <$> sequence (repeat 2 idDigit))
+    (Year  . read <$> sequence (replicate 4 digit))  <*>
+    (Month . read <$> sequence (replicate 2 digit))  <*>
+    (Day   . read <$> sequence (replicate 2 digit))
 
 parseTime :: Parser Char Time
 parseTime = Time <$>
-    (read <$> sequence (repeat 2 idDigit)) <*>
-    (read <$> sequence (repeat 2 idDigit))
+    (Hour   . read <$> sequence (replicate 2 digit)) <*>
+    (Minute . read <$> sequence (replicate 2 digit)) <*>
+    (Second . read <$> sequence (replicate 2 digit))
 
 
 -- Exercise 2
 run :: Parser a b -> [a] -> Maybe b
-run p as = listToMaybe $ fst <$> (as >>= parse p)
+run p as = listToMaybe $ map fst (parse p as)
 
 -- Exercise 3
 printDateTime :: DateTime -> String
-printDateTime (DateTime (Date d) (Time t) u) = printDate d ++ "T" ++ printTime t ++ printkutc u
+printDateTime (DateTime d t u) = printDate d ++ "T" ++ printTime t ++ printutc u
 
 printDate :: Date -> String
 printDate (Date (Year y) (Month m) (Day d)) = 
@@ -121,7 +123,7 @@ parsePrint s = printDateTime <$> run parseDateTime s
 
 -- Exercise 5
 checkDateTime :: DateTime -> Bool
-checkDateTime (DateTime (Date d) (Time t) _) = checkDate d && checkTime t
+checkDateTime (DateTime d t _) = checkDate d && checkTime t
 
 checkDate :: Date -> Bool
 checkDate (Date (Year y) (Month m) (Day d))
@@ -168,7 +170,7 @@ scanCalendar :: Parser Char [Token]
 scanCalendar = concat <$> sequence [scanHeader, scanEvent]
 
 scanHeader :: Parser Char [Token]
-scanHeader = (token "BEGIN:VCALENDAR") scanHeader' (token "END:VCALENDAR") where
+scanHeader = pack (token "BEGIN:VCALENDAR") scanHeader' (token "END:VCALENDAR") where
     scanHeader' = many $ choice 
         [ PRODID  <$> pack (token "PRODID:") identifier (symbol  '\n')
         , VERSION <$  token "VERSION:2.0\n"]

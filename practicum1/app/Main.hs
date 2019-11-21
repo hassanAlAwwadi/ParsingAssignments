@@ -1,4 +1,4 @@
-module Main where
+module Main.Main where
 
 import StartingFramework as S
 
