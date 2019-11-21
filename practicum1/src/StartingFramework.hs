@@ -1,4 +1,9 @@
 {-# LANGUAGE MultiWayIf #-}
+module StartingFramework where
+    
+
+import Prelude hiding ((*>),sequence,(<$))
+import Data.List (sort)
 import ParseLib.Abstract
 import System.Environment
 
@@ -96,7 +101,7 @@ printDate (Date (Year y) (Month m) (Day d)) =
             | otherwise -> ""
     in  yb ++ show y ++ mb ++ show m ++ db ++ show d
 
-printDateTime :: Time -> String
+printTime :: Time -> String
 printTime (Time (Hour h) (Minute m) (Second s)) = 
     let 
     hb = if | h < 10    -> "0"
@@ -107,7 +112,7 @@ printTime (Time (Hour h) (Minute m) (Second s)) =
             | otherwise -> ""    
     in hb ++ show h ++ mb ++ show m ++ sb ++ show s
 
-printDateTime :: Bool -> String
+printutc :: Bool -> String
 printutc False = ""
 printutc True = "Z"
 
@@ -132,7 +137,7 @@ checkTime :: Time -> Bool
 checkTime (Time (Hour h) (Minute m) (Second s)) = h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59
 
 -- Exercise 6
-data Calendar = Calendar{ prodId :: String
+data Calendar = Calendar{ prodId   :: String
                         , calEvents:: [Event] }
     deriving (Eq, Ord, Show)
    
@@ -183,7 +188,8 @@ scanEvent = pack (token "BEGIN:VEVENT") scanEvent' (token "END:VEVENT") where
 
 parseCalendar :: Parser Token Calendar
 parseCalendar = (sort <$> look) >>= parseCalendar' where
-    parseCalendar' = Calendar <$> 
+    parseCalendar' = undefined
+        --Calendar <$> 
 
 recognizeCalendar :: String -> Maybe Calendar
 recognizeCalendar s = run scanCalendar s >>= run parseCalendar
