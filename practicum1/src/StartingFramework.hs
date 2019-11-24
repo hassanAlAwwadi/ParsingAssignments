@@ -2,7 +2,7 @@
 module StartingFramework where
     
 
-import Prelude hiding ((*>),sequence,(<$))
+import Prelude hiding ((*>),sequence,(<$), (<*))
 import Data.List (sort)
 import Data.Maybe(listToMaybe)
 import ParseLib.Abstract
@@ -155,8 +155,10 @@ data Event = Event{ uId         :: String
     
 
 -- Exercise 7
-data Token = PRODID String
+data Token = VCALENDAR [Token] [Token]
+           | PRODID String
            | VERSION
+           | VEVENT [Token]
            | UID String
            | DTSTAMP DateTime
            | DTSTART DateTime
@@ -167,17 +169,16 @@ data Token = PRODID String
     deriving (Eq, Ord, Show)
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = concat <$> sequence [scanHeader, scanEvent]
+scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR"
 
 scanHeader :: Parser Char [Token]
-scanHeader = pack (token "BEGIN:VCALENDAR") scanHeader' (token "END:VCALENDAR") where
-    scanHeader' = many $ choice 
+scanHeader = greedy1 $ choice 
         [ PRODID  <$> pack (token "PRODID:") identifier (symbol  '\n')
         , VERSION <$  token "VERSION:2.0\n"]
     
 scanEvent :: Parser Char [Token]
-scanEvent = pack (token "BEGIN:VEVENT") scanEvent' (token "END:VEVENT") where 
-    scanEvent' = many $ choice 
+scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT" <*> scanEvent' <* token "END:VEVENT" where 
+    scanEvent' = greedy1 $ choice 
         [ DTSTAMP     <$> pack (token "DTSTAMP:"    ) parseDateTime (symbol  '\n')
         , DTSTART     <$> pack (token "DTSTART:"    ) parseDateTime (symbol  '\n')
         , DTEND       <$> pack (token "DTEND:"      ) parseDateTime (symbol  '\n')
