@@ -3,8 +3,8 @@ module StartingFramework where
     
 
 import Prelude hiding ((*>),sequence,(<$), (<*))
-import Data.List (sort)
-import Data.Maybe(listToMaybe)
+import Data.List (sort, find)
+import Data.Maybe(listToMaybe, fromJust)
 import ParseLib.Abstract
 import System.Environment
 import System.IO
@@ -192,11 +192,102 @@ scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT" <*> scanEvent' <* token "END
         , Location    <$> pack (token "LOCATION:"   ) identifier    (token  "\r\n")
         ]
 
-
 parseCalendar :: Parser Token Calendar
-parseCalendar = (sort <$> look) >>= parseCalendar' where
-    parseCalendar' = undefined
-        --Calendar <$> 
+parseCalendar = Calendar<$>header <*> many event
+
+header :: Parser Token String
+header = prod
+
+prod :: Parser Token String
+prod = fromProdID<$>satisfy isProdID
+
+isProdID :: Token -> Bool
+isProdID (PRODID _) = True
+isProdID _          = False
+
+fromProdID :: Token -> String
+fromProdID (PRODID p) = p
+fromProdID _          = error "fromProdID"
+
+event :: Parser Token Event
+event = fromEvent<$>satisfy isEvent
+
+isEvent :: Token -> Bool
+isEvent (VEVENT _) = True
+isEvent _          = False
+
+fromEvent :: Token -> Event
+fromEvent (VEVENT es) = Event { 
+  uId         = uid
+, dtStamp     = stamp 
+, dtStart     = start
+, dtEnd       = end
+, description = des
+, summary     = sum
+, location    = loc }
+    where uid  =  fromUID (fromJust (find isUID es))
+          stamp = fromDTSTAMP (fromJust (find isDTSTAMP es))
+          start = fromDTSTART (fromJust (find isDTSTART es))
+          end   = fromDTEND (fromJust (find isDTEND es))
+          des   = fromDescription (find isDescription es)
+          sum   = fromSummary (find isSummary es)
+          loc   = fromLocation (find isLocation es)
+
+isUID :: Token -> Bool
+isUID (UID _) = True
+isUID _          = False
+
+fromUID :: Token -> String
+fromUID (UID uid) = uid
+UID _          = error "fromUID"
+
+isDTSTAMP :: Token -> Bool
+isDTSTAMP (DTSTAMP _) = True
+isDTSTAMP _          = False
+
+fromDTSTAMP :: Token -> DateTime
+fromDTSTAMP (DTSTAMP stamp) = stamp
+DTSTAMP _          = error "fromDTSTAMP"
+
+isDTSTART :: Token -> Bool
+isDTSTART (DTSTART _) = True
+isDTSTART _          = False
+
+fromDTSTART :: Token -> DateTime
+fromDTSTART (DTSTART st) = st
+DTSTART _          = error "fromDTSTART"
+
+isDTEND :: Token -> Bool
+isDTEND (DTEND _) = True
+isDTEND _          = False
+
+fromDTEND :: Token -> DateTime
+fromDTEND (DTEND end) = end
+fromDTEND _          = error "fromDTEND"
+
+isDescription :: Token -> Bool
+isDescription (Description _) = True
+isDescription _          = False
+
+fromDescription :: Maybe Token -> Maybe String
+fromDescription (Just (Description des)) = Just des
+fromDescription _          = Nothing
+
+isSummary:: Token -> Bool
+isSummary (Summary _) = True
+isSummary _          = False
+
+fromSummary :: Maybe Token -> Maybe String
+fromSummary (Just (Summary sum)) = Just sum
+fromSummary _          = Nothing
+
+isLocation :: Token -> Bool
+isLocation (Location _) = True
+isLocation _          = False
+
+fromLocation :: Maybe Token -> Maybe String
+fromLocation (Just (Location loc)) = Just loc
+fromLocation _          = Nothing
 
 recognizeCalendar :: String -> Maybe Calendar
 recognizeCalendar s = run scanCalendar s >>= run parseCalendar
