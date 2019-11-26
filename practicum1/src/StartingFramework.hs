@@ -310,14 +310,6 @@ printCalendar c =
     (calEvents c >>= printEvent)    ++
     "END:VCALENDAR"
 
-{-- data Event = Event{ uId         :: String
-            , dtStamp     :: DateTime 
-            , dtStart     :: DateTime
-            , dtEnd       :: DateTime
-            , description :: Maybe String
-            , summary     :: Maybe String
-            , location    :: Maybe String }
---}
 printEvent :: Event -> String
 printEvent e = 
     "BEGIN:VEVENT\r\n"                                ++
