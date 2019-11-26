@@ -295,23 +295,23 @@ recognizeCalendar s = run scanCalendar s >>= run parseCalendar
 -- Exercise 8
 
 -- for testing
-parseWith :: FilePath -> Parser Char a -> IO (Maybe a)
-parseWith p prs = do
+parseStrWith :: FilePath -> Parser Char a -> IO (Maybe a)
+parseStrWith p prs = do
     handle  <- openFile p ReadMode
     _       <- hSetNewlineMode handle noNewlineTranslation
     content <- hGetContents handle
     return $ run prs content
 
+parseTokensWith p prs = do
+    tokens <- readTokens p
+    return $ tokens >>= run prs 
+
 -- for testing tokenisation
 readTokens :: FilePath -> IO (Maybe [Token])
-readTokens p = parseWith p scanCalendar 
+readTokens p = parseStrWith p scanCalendar 
 
 readCalendar :: FilePath -> IO (Maybe Calendar)
-readCalendar p = do
-    handle  <- openFile p ReadMode
-    _       <- hSetNewlineMode handle noNewlineTranslation
-    content <- hGetContents handle
-    return $  recognizeCalendar content
+readCalendar p = parseTokensWith p parseCalendar
 
 
 -- Exercise 9
