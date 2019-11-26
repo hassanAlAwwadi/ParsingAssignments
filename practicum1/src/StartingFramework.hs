@@ -5,6 +5,7 @@ module StartingFramework where
 import Prelude hiding ((*>),sequence,(<$), (<*))
 import Data.List (sort, find)
 import Data.Maybe(listToMaybe, fromJust)
+import Control.Monad(replicateM)
 import ParseLib.Abstract
 import System.Environment
 import Debug.Trace
@@ -176,7 +177,7 @@ data Token = VCALENDAR [Token] [Token]
 calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
+scanCalendar = greedy $ VCALENDAR <$ fmap (trace "begin") token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
 
 scanHeader :: Parser Char [Token]
 scanHeader = greedy $ choice 
