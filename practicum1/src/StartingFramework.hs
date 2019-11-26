@@ -7,6 +7,7 @@ import Data.List (sort)
 import Data.Maybe(listToMaybe)
 import ParseLib.Abstract
 import System.Environment
+import System.IO
 
 -- Starting Framework
 
@@ -122,6 +123,9 @@ printutc True = "Z"
 parsePrint s = printDateTime <$> run parseDateTime s
 
 -- Exercise 5
+
+parseCheck s = checkDateTime <$> run parseDateTime s
+
 checkDateTime :: DateTime -> Bool
 checkDateTime (DateTime d t _) = checkDate d && checkTime t
 
@@ -173,19 +177,19 @@ scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR" <*> scanHeader <*> 
 
 scanHeader :: Parser Char [Token]
 scanHeader = greedy1 $ choice 
-        [ PRODID  <$> pack (token "PRODID:") identifier (symbol  '\n')
+        [ PRODID  <$> pack (token "PRODID:") identifier (token  "\r\n")
         , VERSION <$  token "VERSION:2.0\n"]
     
 scanEvent :: Parser Char [Token]
 scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT" <*> scanEvent' <* token "END:VEVENT" where 
     scanEvent' = greedy1 $ choice 
-        [ DTSTAMP     <$> pack (token "DTSTAMP:"    ) parseDateTime (symbol  '\n')
-        , DTSTART     <$> pack (token "DTSTART:"    ) parseDateTime (symbol  '\n')
-        , DTEND       <$> pack (token "DTEND:"      ) parseDateTime (symbol  '\n')
-        , UID         <$> pack (token "UID:"        ) identifier    (symbol  '\n')                 
-        , Description <$> pack (token "DESCRIPTION:") identifier    (symbol  '\n')
-        , Summary     <$> pack (token "SUMMARY:"    ) identifier    (symbol  '\n')
-        , Location    <$> pack (token "LOCATION:"   ) identifier    (symbol  '\n')
+        [ DTSTAMP     <$> pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
+        , DTSTART     <$> pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
+        , DTEND       <$> pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
+        , UID         <$> pack (token "UID:"        ) identifier    (token  "\r\n")                 
+        , Description <$> pack (token "DESCRIPTION:") identifier    (token  "\r\n")
+        , Summary     <$> pack (token "SUMMARY:"    ) identifier    (token  "\r\n")
+        , Location    <$> pack (token "LOCATION:"   ) identifier    (token  "\r\n")
         ]
 
 
@@ -199,7 +203,11 @@ recognizeCalendar s = run scanCalendar s >>= run parseCalendar
 
 -- Exercise 8
 readCalendar :: FilePath -> IO (Maybe Calendar)
-readCalendar = undefined
+readCalendar p = do
+    hSetNewlineMode noNewlineTranslation
+    handle  <- openFile p ReadMode
+    content <- hGetContents handle
+    return $recognizeCalendar content
 
 -- Exercise 9
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
