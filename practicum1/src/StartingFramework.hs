@@ -109,13 +109,9 @@ printDate (Date (Year y) (Month m) (Day d)) =
 printTime :: Time -> String
 printTime (Time (Hour h) (Minute m) (Second s)) = 
     let 
-    hb = if | h < 10    -> "0"
-            | otherwise -> ""
-    mb = if | m < 10    -> "0"
-            | otherwise -> ""
-    sb = if | s < 10    -> "0"
-            | otherwise -> ""    
-    in hb ++ show h ++ mb ++ show m ++ sb ++ show s
+    check n = if | n < 10    -> "0"
+                 | otherwise -> ""
+    in check h ++ show h ++ check m ++ show m ++ check s ++ show s
 
 printutc :: Bool -> String
 printutc False = ""
@@ -177,7 +173,7 @@ data Token = VCALENDAR [Token] [Token]
 calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = greedy $ VCALENDAR <$ fmap (trace "begin") token "BEGIN:VCALENDAR\r\n" <*> fmap (trace "headers") scanHeader <*> fmap (trace "events") scanEvent <* fmap (trace "end") token "END:VCALENDAR\r\n"
+scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
 
 scanHeader :: Parser Char [Token]
 scanHeader = greedy $ choice 
@@ -185,7 +181,7 @@ scanHeader = greedy $ choice
         , VERSION <$  token "VERSION:2.0\r\n"]
     
 scanEvent :: Parser Char [Token]
-scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT" <*> scanEvent' <* token "END:VEVENT" where 
+scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token "END:VEVENT\r\n" where 
     scanEvent' = greedy $ choice 
         [ DTSTAMP     <$> pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$> pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
@@ -203,7 +199,7 @@ header :: Parser Token String
 header = prod
 
 prod :: Parser Token String
-prod = fromProdID<$>satisfy isProdID
+prod = fromProdID <$> satisfy isProdID
 
 isProdID :: Token -> Bool
 isProdID (PRODID _) = True
@@ -298,20 +294,25 @@ recognizeCalendar s = run scanCalendar s >>= run parseCalendar
 
 -- Exercise 8
 
+-- for testing
+parseWith :: FilePath -> Parser Char a -> IO (Maybe a)
+parseWith p prs = do
+    handle  <- openFile p ReadMode
+    _       <- hSetNewlineMode handle noNewlineTranslation
+    content <- hGetContents handle
+    return $ run prs content
+
 -- for testing tokenisation
 readTokens :: FilePath -> IO (Maybe [Token])
-readTokens p = do
-    handle  <- openFile p ReadMode
-    _ <- hSetNewlineMode handle noNewlineTranslation
-    content <- hGetContents handle
-    return $ run scanCalendar content
+readTokens p = parseWith p scanCalendar 
 
 readCalendar :: FilePath -> IO (Maybe Calendar)
 readCalendar p = do
     handle  <- openFile p ReadMode
-    hSetNewlineMode handle noNewlineTranslation
+    _       <- hSetNewlineMode handle noNewlineTranslation
     content <- hGetContents handle
-    return $ recognizeCalendar content
+    return $  recognizeCalendar content
+
 
 -- Exercise 9
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
