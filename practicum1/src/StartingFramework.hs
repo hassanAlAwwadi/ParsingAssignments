@@ -1,9 +1,10 @@
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE MultiWayIf, LambdaCase #-}
 module StartingFramework where
     
 
 import Prelude hiding ((*>),sequence,(<$), (<*))
 import Data.List (sort, find)
+import Data.Functor (($>))
 import Data.Maybe(listToMaybe, fromJust)
 import Control.Monad(replicateM)
 import ParseLib.Abstract
@@ -176,13 +177,13 @@ scanCalendar :: Parser Char [Token]
 scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
 
 scanHeader :: Parser Char [Token]
-scanHeader = greedy $ choice 
+scanHeader = greedy1 $ choice 
         [ PRODID  <$> pack (token "PRODID:") calIdentifier (token "\r\n")
         , VERSION <$  token "VERSION:2.0\r\n"]
     
 scanEvent :: Parser Char [Token]
-scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token "END:VEVENT\r\n" where 
-    scanEvent' = greedy $ choice 
+scanEvent = greedy1 $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token "END:VEVENT\r\n" where 
+    scanEvent' = greedy1 $ choice 
         [ DTSTAMP     <$>  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
         , DTEND       <$>  pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
@@ -193,24 +194,18 @@ scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token 
         ]
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar <$> header <*> many event
+parseCalendar =  head . parseCalendar' <$> satisfy (\case (VCALENDAR _ _) -> True ; _ -> False) where
+    parseCalendar' (VCALENDAR h e) = Calendar <$> pId <*> events where 
+        pId    = fst <$> parse parseHeader (sort h)
+        events = fst <$> parse parseEvents (sort e)
+    
 
-header :: Parser Token String
-header = prod
 
-prod :: Parser Token String
-prod = fromProdID <$> satisfy isProdID
+parseHeader :: Parser Token String
+parseHeader = (\(PRODID s) -> s) <$> satisfy (\case (PRODID _) -> True ; _ -> False) <*  satisfy (\case VERSION -> True ; _ -> False)
 
-isProdID :: Token -> Bool
-isProdID (PRODID _) = True
-isProdID _          = False
-
-fromProdID :: Token -> String
-fromProdID (PRODID p) = p
-fromProdID _          = error "fromProdID"
-
-event :: Parser Token Event
-event = fromEvent <$> satisfy isEvent
+parseEvents :: Parser Token [Event]
+parseEvents = greedy $ fromEvent <$> satisfy isEvent
 
 isEvent :: Token -> Bool
 isEvent (VEVENT _) = True
