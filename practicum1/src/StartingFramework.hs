@@ -181,19 +181,19 @@ scanCalendar = greedy $ VCALENDAR <$ fmap (trace "begin") token "BEGIN:VCALENDAR
 
 scanHeader :: Parser Char [Token]
 scanHeader = greedy $ choice 
-        [ PRODID  <$> pack (token "PRODID:") calIdentifier (token "\r\n")
-        , VERSION <$  token "VERSION:2.0\r\n"]
+        [ PRODID  <$> fmap (trace "prodID") pack (token "PRODID:") calIdentifier (token "\r\n")
+        , VERSION <$  fmap (trace "version") token "VERSION:2.0\r\n"]
     
 scanEvent :: Parser Char [Token]
 scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT" <*> scanEvent' <* token "END:VEVENT" where 
     scanEvent' = greedy $ choice 
-        [ DTSTAMP     <$> pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
-        , DTSTART     <$> pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
-        , DTEND       <$> pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
-        , UID         <$> pack (token "UID:"        ) calIdentifier (token  "\r\n")                 
-        , Description <$> pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
-        , Summary     <$> pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
-        , Location    <$> pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
+        [ DTSTAMP     <$> fmap (trace "!")  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
+        , DTSTART     <$> fmap (trace "!")  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
+        , DTEND       <$> fmap (trace "!")  pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
+        , UID         <$> fmap (trace "!")  pack (token "UID:"        ) calIdentifier (token  "\r\n")                 
+        , Description <$> fmap (trace "!")  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
+        , Summary     <$> fmap (trace "!")  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
+        , Location    <$> fmap (trace "!")  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
         ]
 
 parseCalendar :: Parser Token Calendar
