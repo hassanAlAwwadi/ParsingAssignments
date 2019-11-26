@@ -204,16 +204,44 @@ recognizeCalendar s = run scanCalendar s >>= run parseCalendar
 -- Exercise 8
 readCalendar :: FilePath -> IO (Maybe Calendar)
 readCalendar p = do
-    hSetNewlineMode noNewlineTranslation
     handle  <- openFile p ReadMode
+    hSetNewlineMode handle noNewlineTranslation
     content <- hGetContents handle
     return $recognizeCalendar content
 
 -- Exercise 9
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
 printCalendar :: Calendar -> String
-printCalendar = undefined
+printCalendar c = 
+    "BEGIN:VCALENDAR\r\n"           ++
+    "PRODID:" ++ prodId c ++ "\r\n" ++
+    "VERSION:2.0\r\n"               ++
+    (calEvents c >>= printEvent)    ++
+    "END:VCALENDAR"
 
+{-- data Event = Event{ uId         :: String
+            , dtStamp     :: DateTime 
+            , dtStart     :: DateTime
+            , dtEnd       :: DateTime
+            , description :: Maybe String
+            , summary     :: Maybe String
+            , location    :: Maybe String }
+--}
+printEvent :: Event -> String
+printEvent e = 
+    "BEGIN:VEVENT\r\n"                                ++
+    "UID:" ++ uId e ++ "\r\n"                         ++
+    "DTSTAMP:" ++ printDateTime (dtStamp e) ++ "\r\n" ++
+    "DTSTART:" ++ printDateTime (dtStart e) ++ "\r\n" ++
+    "DTSEND:"  ++ printDateTime (dtEnd   e) ++ "\r\n" ++
+    "DESCRIPTION:" ++ printMaybeS (description e)     ++
+    "SUMMARY:"  ++ printMaybeS (summary e)            ++
+    "LOCATION:" ++ printMaybeS (location e)    
+
+
+printMaybeS :: Maybe String -> String
+printMaybeS Nothing = ""
+printMaybeS (Just s) = s ++ "\r\n"
 -- Exercise 10
 countEvents :: Calendar -> Int
 countEvents = undefined
