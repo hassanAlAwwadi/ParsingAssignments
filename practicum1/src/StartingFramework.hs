@@ -334,15 +334,17 @@ printEvent e =
 printMaybeS :: Maybe String -> String
 printMaybeS Nothing = ""
 printMaybeS (Just s) = s ++ "\r\n"
+
 -- Exercise 10
 countEvents :: Calendar -> Int
-countEvents = undefined
+countEvents (Calendar _ es) = length es
 
 findEvents :: DateTime -> Calendar -> [Event]
-findEvents = undefined
+findEvents dt (Calendar _ es) = filter (\e -> dtStart e <= dt && dtEnd e > dt) es
 
 checkOverlapping :: Calendar -> Bool
-checkOverlapping = undefined
+checkOverlapping (Calendar _ es) = not $ null [() | e1 <- es, e2 <- es, e1 /= e2 && overlap e1 e2] where
+    overlap Event{dtStart = s1, dtEnd = e1} Event{dtStart = s2, dtEnd = e2} = e1 > s2 && e1 < e2 || e2 > s1 && e2 < e1
 
 timeSpent :: String -> Calendar -> Int
 timeSpent = undefined
