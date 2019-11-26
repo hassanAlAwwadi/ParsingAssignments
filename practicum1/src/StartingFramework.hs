@@ -7,6 +7,7 @@ import Data.List (sort, find)
 import Data.Maybe(listToMaybe, fromJust)
 import ParseLib.Abstract
 import System.Environment
+import Debug.Trace
 import System.IO
 
 -- Starting Framework
@@ -72,15 +73,15 @@ parseDateTime = DateTime <$>
 
 parseDate :: Parser Char Date
 parseDate =  Date <$>
-    (Year  . read <$> sequence (replicate 4 digit))  <*>
-    (Month . read <$> sequence (replicate 2 digit))  <*>
-    (Day   . read <$> sequence (replicate 2 digit))
+    (Year  . read <$> replicateM 4 digit)  <*>
+    (Month . read <$> replicateM 2 digit) <*>
+    (Day   . read <$> replicateM 2 digit)
 
 parseTime :: Parser Char Time
 parseTime = Time <$>
-    (Hour   . read <$> sequence (replicate 2 digit)) <*>
-    (Minute . read <$> sequence (replicate 2 digit)) <*>
-    (Second . read <$> sequence (replicate 2 digit))
+    (Hour   . read <$> replicateM 2 digit) <*>
+    (Minute . read <$> replicateM 2 digit) <*>
+    (Second . read <$> replicateM 2 digit)
 
 
 -- Exercise 2
@@ -172,28 +173,30 @@ data Token = VCALENDAR [Token] [Token]
            | Location String
     deriving (Eq, Ord, Show)
 
+calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
+
 scanCalendar :: Parser Char [Token]
-scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR"
+scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
 
 scanHeader :: Parser Char [Token]
-scanHeader = greedy1 $ choice 
-        [ PRODID  <$> pack (token "PRODID:") identifier (token  "\r\n")
-        , VERSION <$  token "VERSION:2.0\n"]
+scanHeader = greedy $ choice 
+        [ PRODID  <$> pack (token "PRODID:") calIdentifier (token "\r\n")
+        , VERSION <$  token "VERSION:2.0\r\n"]
     
 scanEvent :: Parser Char [Token]
 scanEvent = greedy $ VEVENT <$ token "BEGIN:VEVENT" <*> scanEvent' <* token "END:VEVENT" where 
-    scanEvent' = greedy1 $ choice 
+    scanEvent' = greedy $ choice 
         [ DTSTAMP     <$> pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$> pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
         , DTEND       <$> pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
-        , UID         <$> pack (token "UID:"        ) identifier    (token  "\r\n")                 
-        , Description <$> pack (token "DESCRIPTION:") identifier    (token  "\r\n")
-        , Summary     <$> pack (token "SUMMARY:"    ) identifier    (token  "\r\n")
-        , Location    <$> pack (token "LOCATION:"   ) identifier    (token  "\r\n")
+        , UID         <$> pack (token "UID:"        ) calIdentifier (token  "\r\n")                 
+        , Description <$> pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
+        , Summary     <$> pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
+        , Location    <$> pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
         ]
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar<$>header <*> many event
+parseCalendar = Calendar <$> header <*> many event
 
 header :: Parser Token String
 header = prod
@@ -210,7 +213,7 @@ fromProdID (PRODID p) = p
 fromProdID _          = error "fromProdID"
 
 event :: Parser Token Event
-event = fromEvent<$>satisfy isEvent
+event = fromEvent <$> satisfy isEvent
 
 isEvent :: Token -> Bool
 isEvent (VEVENT _) = True
@@ -293,12 +296,21 @@ recognizeCalendar :: String -> Maybe Calendar
 recognizeCalendar s = run scanCalendar s >>= run parseCalendar
 
 -- Exercise 8
+
+-- for testing tokenisation
+readTokens :: FilePath -> IO (Maybe [Token])
+readTokens p = do
+    handle  <- openFile p ReadMode
+    hSetNewlineMode handle noNewlineTranslation
+    content <- hGetContents handle
+    return $ run scanCalendar content
+
 readCalendar :: FilePath -> IO (Maybe Calendar)
 readCalendar p = do
     handle  <- openFile p ReadMode
     hSetNewlineMode handle noNewlineTranslation
     content <- hGetContents handle
-    return $recognizeCalendar content
+    return $ recognizeCalendar content
 
 -- Exercise 9
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
