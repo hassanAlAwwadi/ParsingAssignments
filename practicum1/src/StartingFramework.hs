@@ -177,7 +177,7 @@ data Token = VCALENDAR [Token] [Token]
 calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = greedy $ VCALENDAR <$ fmap (trace "begin") token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
+scanCalendar = greedy $ VCALENDAR <$ fmap (trace "begin") token "BEGIN:VCALENDAR\r\n" <*> fmap (trace "headers") scanHeader <*> fmap (trace "events") scanEvent <* fmap (trace "end") token "END:VCALENDAR\r\n"
 
 scanHeader :: Parser Char [Token]
 scanHeader = greedy $ choice 
@@ -302,7 +302,7 @@ recognizeCalendar s = run scanCalendar s >>= run parseCalendar
 readTokens :: FilePath -> IO (Maybe [Token])
 readTokens p = do
     handle  <- openFile p ReadMode
-    hSetNewlineMode handle noNewlineTranslation
+    _ <- hSetNewlineMode handle noNewlineTranslation
     content <- hGetContents handle
     return $ run scanCalendar content
 
