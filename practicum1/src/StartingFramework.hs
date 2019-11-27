@@ -288,7 +288,12 @@ checkOverlapping (Calendar _ es) = not $ null [() | e1 <- es, e2 <- es, e1 /= e2
     overlap Event{dtStart = s1, dtEnd = e1} Event{dtStart = s2, dtEnd = e2} = e1 > s2 && e1 < e2 || e2 > s1 && e2 < e1
 
 timeSpent :: String -> Calendar -> Int
-timeSpent = undefined
+timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
+    timeSpent' Event{dtStart = s1, dtEnd = e1} = 0
+    -- = e1 <-d> s1
+    -- DateTime { date :: Date
+    --                      , time :: Time
+    --                      , utc :: Bool } <-d> d
 
 -- Exercise 11
 ppMonth :: Year -> Month -> Calendar -> String
