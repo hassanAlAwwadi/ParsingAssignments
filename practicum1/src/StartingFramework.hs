@@ -194,11 +194,12 @@ scanEvent = greedy1 $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token
         ]
 
 parseCalendar :: Parser Token Calendar
-parseCalendar =  head . parseCalendar' <$> satisfy (\case (VCALENDAR _ _) -> True ; _ -> False) where
-    parseCalendar' (VCALENDAR h e) = Calendar <$> pId <*> events where 
-        pId    = fst <$> parse parseHeader (sort h)
-        events = fst <$> parse parseEvents (sort e)
-    
+parseCalendar =   satisfy (\case (VCALENDAR _ _) -> True ; _ -> False) >>= choice . parseCalendar' where
+    parseCalendar' :: Token -> [Parser Token Calendar]
+    parseCalendar' (VCALENDAR h e) = do
+        hRes <- fst <$> parse parseHeader h
+        eRes <- fst <$> parse parseEvents e
+        pure (pure $ Calendar hRes eRes)
 
 
 parseHeader :: Parser Token String
