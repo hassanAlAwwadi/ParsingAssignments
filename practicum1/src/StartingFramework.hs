@@ -212,9 +212,8 @@ parseEvents :: Parser Token [Event]
 parseEvents = greedy $ anySymbol >>= parseEvent
 
 parseEvent :: Token -> Parser Token Event
-parseEvent (VEVENT es) = choice $ do
-    event <- fst <$> parse parser sorted
-    pure (pure event) where
+parseEvent (VEVENT es) = choice $ pure <$> event where
+    event  = fst <$> parse parser sorted
     sorted = sort es
     parser = Event  <$> fmap (\(UID n) -> n)                (satisfy (\case (UID _)     -> True ; _    -> False))
                     <*> fmap (\(DTSTAMP s) -> s)            (satisfy (\case (DTSTAMP _) -> True ; _    -> False))
