@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiWayIf, LambdaCase #-}
+{-# LANGUAGE MultiWayIf, LambdaCase, TypeApplications #-}
 module StartingFramework where
     
 
@@ -166,9 +166,9 @@ data Token = VCALENDAR [Token] [Token]
            | DTSTAMP DateTime
            | DTSTART DateTime
            | DTEND DateTime
-           | Description String
-           | Summary String
-           | Location String
+           | DESCRIPTION String
+           | SUMMARY String
+           | LOCATION String
     deriving (Eq, Ord, Show)
 
 calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
@@ -188,103 +188,44 @@ scanEvent = greedy1 $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token
         , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
         , DTEND       <$>  pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
         , UID         <$>  pack (token "UID:"        ) calIdentifier (token  "\r\n")                 
-        , Description <$>  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
-        , Summary     <$>  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
-        , Location    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
+        , DESCRIPTION <$>  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
+        , SUMMARY     <$>  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
+        , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
         ]
 
 -- very difficult to figure this one out imo.
 parseCalendar :: Parser Token Calendar
-parseCalendar =   satisfy (\case (VCALENDAR _ _) -> True ; _ -> False) >>= choice . parseCalendar' where
-    parseCalendar' :: Token -> [Parser Token Calendar]
-    parseCalendar' (VCALENDAR h e) = do
-        hRes <- fst <$> parse parseHeader (sort h)
-        eRes <- fst <$> parse parseEvents (sort e)
+parseCalendar =   anySymbol >>= parseCalendar' where
+    parseCalendar' :: Token -> Parser Token Calendar
+    parseCalendar' (VCALENDAR h e) = choice $ do
+        hRes <- fst <$> parse parseHeader h
+        eRes <- fst <$> parse parseEvents e
         pure (pure $ Calendar hRes eRes)
+    parseCalendar' _ = failp @Token @Calendar
 
 
 parseHeader :: Parser Token String
-parseHeader = (\(PRODID s) -> s) <$> satisfy (\case (PRODID _) -> True ; _ -> False) <*  satisfy (\case VERSION -> True ; _ -> False)
+parseHeader = 
+    (\(PRODID s) -> s) <$> satisfy (\case (PRODID _) -> True ; _ -> False) <*  satisfy (\case VERSION -> True ; _ -> False) <|>
+    (\(PRODID s) -> s) <$  satisfy (\case VERSION    -> True ; _ -> False) <*> satisfy (\case (PRODID _) -> True ; _ -> False) 
 
 parseEvents :: Parser Token [Event]
-parseEvents = greedy $ fromEvent <$> satisfy isEvent
+parseEvents = greedy $ anySymbol >>= parseEvent
 
-isEvent :: Token -> Bool
-isEvent (VEVENT _) = True
-isEvent _          = False
+parseEvent :: Token -> Parser Token Event
+parseEvent (VEVENT es) = choice $ do
+    event <- fst <$> parse parser sorted
+    pure (pure event) where
+    sorted = sort es
+    parser = Event  <$> fmap (\(UID n) -> n)                (satisfy (\case (UID _)     -> True ; _    -> False))
+                    <*> fmap (\(DTSTAMP s) -> s)            (satisfy (\case (DTSTAMP _) -> True ; _    -> False))
+                    <*> fmap (\(DTSTART s) -> s)            (satisfy (\case (DTSTART _) -> True ; _    -> False))
+                    <*> fmap (\(DTEND s) -> s)              (satisfy (\case (DTEND _)   -> True ; _    -> False))
+                    <*> fmap (fmap (\(DESCRIPTION s) -> s)) (optional $ satisfy (\case (DESCRIPTION _) -> True ; _ -> False))
+                    <*> fmap (fmap (\(SUMMARY s) -> s))     (optional $ satisfy (\case (SUMMARY _)     -> True ; _ -> False))
+                    <*> fmap (fmap (\(LOCATION s) -> s))    (optional $ satisfy (\case (LOCATION _)    -> True ; _ -> False))
+parseEvent _ = failp @Token @Event
 
-fromEvent :: Token -> Event
-fromEvent (VEVENT es) = Event { 
-  uId         = uid
-, dtStamp     = stamp 
-, dtStart     = start
-, dtEnd       = end
-, description = des
-, summary     = sum
-, location    = loc }
-    where uid  =  fromUID (fromJust (find isUID es))
-          stamp = fromDTSTAMP (fromJust (find isDTSTAMP es))
-          start = fromDTSTART (fromJust (find isDTSTART es))
-          end   = fromDTEND (fromJust (find isDTEND es))
-          des   = fromDescription (find isDescription es)
-          sum   = fromSummary (find isSummary es)
-          loc   = fromLocation (find isLocation es)
-
-isUID :: Token -> Bool
-isUID (UID _) = True
-isUID _          = False
-
-fromUID :: Token -> String
-fromUID (UID uid) = uid
-UID _          = error "fromUID"
-
-isDTSTAMP :: Token -> Bool
-isDTSTAMP (DTSTAMP _) = True
-isDTSTAMP _          = False
-
-fromDTSTAMP :: Token -> DateTime
-fromDTSTAMP (DTSTAMP stamp) = stamp
-DTSTAMP _          = error "fromDTSTAMP"
-
-isDTSTART :: Token -> Bool
-isDTSTART (DTSTART _) = True
-isDTSTART _          = False
-
-fromDTSTART :: Token -> DateTime
-fromDTSTART (DTSTART st) = st
-DTSTART _          = error "fromDTSTART"
-
-isDTEND :: Token -> Bool
-isDTEND (DTEND _) = True
-isDTEND _          = False
-
-fromDTEND :: Token -> DateTime
-fromDTEND (DTEND end) = end
-fromDTEND _          = error "fromDTEND"
-
-isDescription :: Token -> Bool
-isDescription (Description _) = True
-isDescription _          = False
-
-fromDescription :: Maybe Token -> Maybe String
-fromDescription (Just (Description des)) = Just des
-fromDescription _          = Nothing
-
-isSummary:: Token -> Bool
-isSummary (Summary _) = True
-isSummary _          = False
-
-fromSummary :: Maybe Token -> Maybe String
-fromSummary (Just (Summary sum)) = Just sum
-fromSummary _          = Nothing
-
-isLocation :: Token -> Bool
-isLocation (Location _) = True
-isLocation _          = False
-
-fromLocation :: Maybe Token -> Maybe String
-fromLocation (Just (Location loc)) = Just loc
-fromLocation _          = Nothing
 
 recognizeCalendar :: String -> Maybe Calendar
 recognizeCalendar s = run scanCalendar s >>= run parseCalendar
