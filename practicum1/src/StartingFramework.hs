@@ -197,10 +197,9 @@ scanEvent = greedy1 $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token
 parseCalendar :: Parser Token Calendar
 parseCalendar =   anySymbol >>= parseCalendar' where
     parseCalendar' :: Token -> Parser Token Calendar
-    parseCalendar' (VCALENDAR h e) = choice $ do
-        hRes <- fst <$> parse parseHeader h
-        eRes <- fst <$> parse parseEvents e
-        pure (pure $ Calendar hRes eRes)
+    parseCalendar' (VCALENDAR h e) =  choice $ pure <$> (Calendar <$> hRes <*> eRes)  where
+        hRes = fst <$> parse parseHeader h
+        eRes = fst <$> parse parseEvents e
     parseCalendar' _ = failp @Token @Calendar
 
 
