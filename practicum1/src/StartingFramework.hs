@@ -281,13 +281,11 @@ checkOverlapping (Calendar _ es) = not $ null [() | e1 <- es, e2 <- es, e1 /= e2
 timeSpent :: String -> Calendar -> Int
 timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
     timeSpent' Event{dtStart = s1, dtEnd = e1} =s1 <-> e1
-    (<->) (DateTime { date = Date {day = Day {unDay = dd}} , time = Time {hour = Hour {unHour = hh}, minute =Minute {unMinute =mm}, second = Second {unSecond = ss}}})  (DateTime { date = Date {day = Day {unDay = dd2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second =Second {unSecond =ss2}}})= ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+60 * 24 * (dd - dd2)
+    (<->) DateTime { date = Date {day = Day {unDay = dd}}  , time = Time {hour = Hour {unHour = hh} , minute =Minute {unMinute =mm}  , second = Second {unSecond = ss}}}  
+          DateTime { date = Date {day = Day {unDay = dd2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second = Second {unSecond =ss2}}} 
+          = ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+60 * 24 * (dd - dd2)
     
 
 -- Exercise 11
 ppMonth :: Year -> Month -> Calendar -> String
 ppMonth = undefined
-
-alternate :: Parser Char a -> Parser Char b -> Parser Char [(a,b)]
-alternate p q = (:) <$> ((,) <$> p <*> q) <*> alts p q where 
-    alts p' q' = (:) <$> ((,) <$> p' <*> q') <*> alts p' q' <|> succeed []   
