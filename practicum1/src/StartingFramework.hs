@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiWayIf, LambdaCase, TypeApplications #-}
+{-# LANGUAGE MultiWayIf, LambdaCase, TypeApplications, TupleSections #-}
 module StartingFramework where
     
 
@@ -6,7 +6,7 @@ import Prelude hiding ((*>),sequence,(<$), (<*))
 import Data.List (sort, find)
 import Data.Functor (($>))
 import Data.Maybe(listToMaybe, fromJust)
-import Control.Monad(replicateM)
+import Control.Monad(replicateM, join)
 import ParseLib.Abstract
 import System.Environment
 import Debug.Trace
@@ -158,8 +158,7 @@ data Event = Event{ uId         :: String
     
 
 -- Exercise 7
-data Token = VCALENDAR [Token] [Token]
-           | PRODID String
+data Token = PRODID String
            | VERSION
            | VEVENT [Token]
            | UID String
@@ -174,16 +173,12 @@ data Token = VCALENDAR [Token] [Token]
 calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = greedy $ VCALENDAR <$ token "BEGIN:VCALENDAR\r\n" <*> scanHeader <*> scanEvent <* token "END:VCALENDAR\r\n"
-
-scanHeader :: Parser Char [Token]
-scanHeader = greedy1 $ choice 
-        [ PRODID  <$> pack (token "PRODID:") calIdentifier (token "\r\n")
-        , VERSION <$  token "VERSION:2.0\r\n"]
-    
-scanEvent :: Parser Char [Token]
-scanEvent = greedy1 $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token "END:VEVENT\r\n" where 
-    scanEvent' = greedy1 $ choice 
+scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
+    scanCalendar' = choice 
+        [ PRODID   <$> pack (token "PRODID:") calIdentifier (token "\r\n")
+        , VERSION  <$  token "VERSION:2.0\r\n"
+        , VEVENT   <$> pack (token "BEGIN:VEVENT\r\n") scanEvent (token "END:VEVENT\r\n")]
+    scanEvent = greedy1 $ choice 
         [ DTSTAMP     <$>  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
         , DTEND       <$>  pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
@@ -191,16 +186,11 @@ scanEvent = greedy1 $ VEVENT <$ token "BEGIN:VEVENT\r\n" <*> scanEvent' <* token
         , DESCRIPTION <$>  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
         , SUMMARY     <$>  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
         , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
-        ]
+        , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier (token  "\r\n")]
 
 -- very difficult to figure this one out imo.
 parseCalendar :: Parser Token Calendar
-parseCalendar =   anySymbol >>= parseCalendar' where
-    parseCalendar' :: Token -> Parser Token Calendar
-    parseCalendar' (VCALENDAR h e) =  choice $ pure <$> (Calendar <$> hRes <*> eRes)  where
-        hRes = fst <$> parse parseHeader h
-        eRes = fst <$> parse parseEvents e
-    parseCalendar' _ = failp @Token @Calendar
+parseCalendar = Calendar <$> parseHeader <*> parseEvents
 
 
 parseHeader :: Parser Token String
@@ -300,3 +290,6 @@ timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == J
 ppMonth :: Year -> Month -> Calendar -> String
 ppMonth = undefined
 
+alternate :: Parser Char a -> Parser Char b -> Parser Char [(a,b)]
+alternate p q = (:) <$> ((,) <$> p <*> q) <*> alts p q where 
+    alts p' q' = (:) <$> ((,) <$> p' <*> q') <*> alts p' q' <|> succeed []   
