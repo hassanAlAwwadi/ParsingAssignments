@@ -288,4 +288,5 @@ timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == J
 
 -- Exercise 11
 ppMonth :: Year -> Month -> Calendar -> String
-ppMonth = undefined
+ppMonth yy mm (Calendar _ es)= show (filter (\e ->  unYear (year (date (dtStart e))) <=  (unYear yy) && unMonth ( month (date (dtStart e))) <= (unMonth mm) &&  unYear (year (date (dtEnd e))) >  (unYear yy) && unMonth( month (date (dtEnd e))) > (unMonth mm)) es)
+    
