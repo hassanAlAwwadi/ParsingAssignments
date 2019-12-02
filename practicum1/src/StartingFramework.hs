@@ -172,12 +172,14 @@ data Token = PRODID String
 
 calIdentifier' = greedy $ satisfy (\c -> c /= '\r')
 calIdentifier'' :: Parser Char String
-calIdentifier'' = (f) <$> satisfy (\c -> c /= '\r') <*> satisfy (\c -> c /= '\n') <*> satisfy (\c -> c /= ' ')
+calIdentifier'' = (f) <$> satisfy (\c -> c == '\r') <*> satisfy (\c -> c == '\n') <*> satisfy (\c -> c == ' ')
                 where f c c2 c3= [c,c2,c3] 
 calIdentifier :: Parser Char String
 calIdentifier = f<$> listOf calIdentifier' calIdentifier''
               where f xs = concat xs
-
+calIdentifier2 :: Parser Char [String]
+calIdentifier2 = listOf calIdentifier' calIdentifier''
+              
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
