@@ -170,7 +170,13 @@ data Token = PRODID String
            | LOCATION String
     deriving (Eq, Ord, Show)
 
-calIdentifier = greedy $ satisfy (\c -> c /= '\r' && c /= '\n')
+calIdentifier' = greedy $ satisfy (\c -> c /= '\r')
+calIdentifier'' :: Parser Char String
+calIdentifier'' = (f) <$> satisfy (\c -> c /= '\r') <*> satisfy (\c -> c /= '\n') <*> satisfy (\c -> c /= ' ')
+                where f c c2 c3= [c,c2,c3] 
+calIdentifier :: Parser Char String
+calIdentifier = f<$> listOf calIdentifier' calIdentifier''
+              where f xs = concat xs
 
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
