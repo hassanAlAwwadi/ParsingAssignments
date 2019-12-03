@@ -9,6 +9,7 @@ import Data.Maybe(listToMaybe, fromJust)
 import Control.Monad(replicateM, join)
 import ParseLib.Abstract
 import System.Environment
+import Data.Char
 import Debug.Trace
 import System.IO
 
@@ -180,15 +181,15 @@ calIdentifier = f<$> listOf calIdentifier' calIdentifier''
               where f xs = concat xs
 calIdentifier2 :: Parser Char [String]
 calIdentifier2 = listOf calIdentifier' calIdentifier''
-              
+isAlphaUpper x = isAlpha x && isUpper x
+skipLine = JUNK  <$  pack  (token "CALSCALE" <*token ":") calIdentifier (token "\r\n") --replace CALSCALE with generic stuff
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
         [ PRODID   <$> pack (token "PRODID:") calIdentifier (token "\r\n")
         , VERSION  <$  token "VERSION:2.0\r\n"        
         , VEVENT   <$> pack (token "BEGIN:VEVENT\r\n") scanEvent (token "END:VEVENT\r\n")
-        ]  <<|> JUNK  <$  calIdentifier <* (token ":")<* calIdentifier <* (token "\r\n")
-           <<|> JUNK  <$  calIdentifier <* (token ";")<* calIdentifier <* (token "\r\n")
+        ]<<|>skipLine
     scanEvent = greedy1 $ choice 
         [ DTSTAMP     <$>  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
@@ -197,8 +198,7 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         , DESCRIPTION <$>  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
         , SUMMARY     <$>  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
         , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
-        ]  <<|> JUNK  <$  calIdentifier <* (token ":")<* calIdentifier <* (token "\r\n")
-           <<|> JUNK  <$  calIdentifier <* (token ";")<* calIdentifier <* (token "\r\n")
+        ]<<|>skipLine
 
 -- very difficult to figure this one out imo.
 parseCalendar :: Parser Token Calendar
@@ -207,10 +207,9 @@ parseCalendar = Calendar <$> parseHeader <*> parseEvents
 
 parseHeader :: Parser Token String
 parseHeader = 
-    (\(PRODID s) -> s) <$> satisfy (\case (PRODID _) -> True ; _ -> False) <*  satisfy (\case VERSION -> True ; _ -> False) <|>
-    (\(PRODID s) -> s) <$  satisfy (\case VERSION    -> True ; _ -> False) <*> satisfy (\case (PRODID _) -> True ; _ -> False <|>
-    ) 
-
+    ((\(PRODID s) -> s) <$> satisfy (\case (PRODID _) -> True ; _ -> False) <*  satisfy (\case VERSION -> True ; _ -> False) <|>
+    (\(PRODID s) -> s) <$  satisfy (\case VERSION    -> True ; _ -> False) <*> satisfy (\case (PRODID _) -> True ; _ -> False))
+    <* greedy (satisfy (\case JUNK -> True ; _ -> False))
 parseEvents :: Parser Token [Event]
 parseEvents = greedy $ anySymbol >>= parseEvent
 
