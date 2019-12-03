@@ -182,7 +182,12 @@ calIdentifier = f<$> listOf calIdentifier' calIdentifier''
 calIdentifier2 :: Parser Char [String]
 calIdentifier2 = listOf calIdentifier' calIdentifier''
 isAlphaUpper x = isAlpha x && isUpper x
-skipLine = JUNK  <$  pack  (token "CALSCALE" <*token ":") calIdentifier (token "\r\n") --replace CALSCALE with generic stuff
+-- | Parses a specific given sequence of symbols.
+notToken :: [Char] -> Parser Char String
+notToken []     = failp
+notToken (x:xs) = ((:)<$>satisfy (==x) <*> notToken xs) <|> ((:)<$>satisfy (/=x) <*> calIdentifier)
+               
+skipLine = JUNK  <$  ((notToken "END:VEVENT")<|> (notToken "END:VCALENDAR")) <* calIdentifier <* (token "\r\n")
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
