@@ -186,8 +186,13 @@ isAlphaUpper x = isAlpha x && isUpper x
 notToken :: [Char] -> Parser Char String
 notToken []     = failp
 notToken (x:xs) = ((:)<$>satisfy (==x) <*> notToken xs) <|> ((:)<$>satisfy (/=x) <*> calIdentifier)
-               
-skipLine = JUNK  <$  ((notToken "END:VEVENT")<|> (notToken "END:VCALENDAR")) <* calIdentifier <* (token "\r\n")
+           
+notTokens :: [Char] -> [Char] -> Parser Char String
+notTokens [] _    = failp
+notTokens _ []    = failp
+notTokens (x:xs) (y:ys)= ((:)<$>satisfy (\c -> (c==x)||(c==y)) <*> (notTokens xs ys)) <|> ((:)<$>satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier)
+
+skipLine = JUNK  <$  ((notTokens "END:VCALENDAR" "END:VEVENT") ) <* calIdentifier <* (token "\r\n")
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
