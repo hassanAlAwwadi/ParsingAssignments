@@ -323,16 +323,16 @@ timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == J
 
 bxMonth :: Year -> Month -> Calendar -> Box
 bxMonth yy mm (Calendar _ es) = let
-    maxDays = daysIn yy mm 
-    dBegin = Date{ year = yy, month = mm, day = Day 1}
-    dEnd = Date{ year = yy, month = mm, day = Day maxDays }
-    events = filter (\Event{dtStamp = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
-    grouped =  M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
+    maxDays     = daysIn yy mm 
+    dBegin      = Date{ year = yy, month = mm, day = Day 1}
+    dEnd        = Date{ year = yy, month = mm, day = Day maxDays }
+    events      = filter (\Event{dtStamp = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
+    grouped     =  M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
     groupedPlus = foldr (\k -> M.insertWith keep k []) grouped [1..maxDays]
-    toBox k l = vcat left (para left 10 (show k) : map (\ Event{} -> para left 10 "-bla-") l)
-    dayBoxes = M.elems $ M.mapWithKey toBox groupedPlus 
-    weekBoxes = map (hcat top) $ chunksOf 7 dayBoxes
-    monthBox = vcat left weekBoxes
+    toBox k l   = vcat left (para left 10 (show k) : map (\ Event{} -> para left 10 "-bla-") l)
+    dayBoxes    = M.elems $ M.mapWithKey toBox groupedPlus 
+    weekBoxes   = map (hcat top) $ chunksOf 7 dayBoxes
+    monthBox    = vcat left weekBoxes
     in monthBox
 
 keep a b = b 
