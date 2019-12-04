@@ -203,7 +203,7 @@ notTokens :: [Char] -> [Char] -> Parser Char String
 notTokens [] _    = failp
 notTokens _ []    = failp
 notTokens (x:xs) (y:ys)= ((:)<$>satisfy (\c -> (c==x)||(c==y)) <*> (notTokens xs ys)) <|> ((:)<$>satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier)
-
+--Almost works for readingclub
 skipLine = JUNK  <$  ((notTokens "END:VCALENDAR" "END:VEVENT") ) <* calIdentifier <* (token "\r\n")
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
@@ -247,7 +247,10 @@ parseEvent (VEVENT es) = choice $ pure <$> event where
                     <*> fmap (fmap (\(DESCRIPTION s) -> s)) (optional $ satisfy (\case (DESCRIPTION _) -> True ; _ -> False))
                     <*> fmap (fmap (\(SUMMARY s) -> s))     (optional $ satisfy (\case (SUMMARY _)     -> True ; _ -> False))
                     <*> fmap (fmap (\(LOCATION s) -> s))    (optional $ satisfy (\case (LOCATION _)    -> True ; _ -> False))
-                    <*  eof
+                    <*  greedy (fmap (\JUNK s -> s)        (satisfy (\case JUNK -> True ; _ -> False))) --idk, maar hoeft ook niet te werken.
+                    <*  eof 
+   
+                    
 parseEvent _ = failp @Token @Event
 
 
@@ -314,12 +317,22 @@ checkOverlapping (Calendar _ es) = not $ null [() | e1 <- es, e2 <- es, e1 /= e2
 
 timeSpent :: String -> Calendar -> Int
 timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
-    timeSpent' Event{dtStart = s1, dtEnd = e1} =s1 <-> e1
-    (<->) DateTime { date = Date {day = Day {unDay = dd}}  , time = Time {hour = Hour {unHour = hh} , minute =Minute {unMinute =mm}  , second = Second {unSecond = ss}}}  
-          DateTime { date = Date {day = Day {unDay = dd2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second = Second {unSecond =ss2}}} 
-          = ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+60 * 24 * (dd - dd2)
-    
-
+    timeSpent' Event{dtStart = s1, dtEnd = e1} = e1 <-> s1
+    (<->) DateTime { date = Date {day = Day {unDay = dd},month = Month {unMonth = mo},year = Year {unYear = yy}}  , time = Time {hour = Hour {unHour = hh} , minute =Minute {unMinute =mm}  , second = Second {unSecond = ss}}}  
+          DateTime { date = Date {day = Day {unDay = dd2},month = Month {unMonth = mo2},year = Year {unYear = yy2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second = Second {unSecond =ss2}}} 
+          |yy==yy2 && mo==mo2                               =  ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+60 * 24 * (dd - dd2)
+          |otherwise                                        =  ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+60 * 24 *((totalDays mo2 mo yy2 yy) +dd - dd2) 
+            where totalDays m m2 y1 y2  |m==m2 && y1 == y2  =  0
+                                        |m>m2 && y2 == y1   =  0
+                                        |y2<y1              =  0
+                                        |m == 12            = (totalDays (1) m2 (y1+1) y2) +lastDay (Year y1) (Month m)
+                                        |otherwise          =  (totalDays (m+1) m2 y1 y2) +lastDay (Year y1) (Month m)
+lastDay :: Year -> Month -> Int
+lastDay (Year y) (Month m)
+    | m `elem` [1, 3, 5, 7, 8, 10, 12] = 31
+    | m `elem` [4, 6, 9, 11] = 30
+    | m == 2 = if leapYear then  29 else  28 where
+        leapYear = y `mod` 4 == 0 && y `mod` 100 /= 0 || y `mod` 400 == 0
 -- Exercise 11
 
 bxMonth :: Year -> Month -> Calendar -> Box
