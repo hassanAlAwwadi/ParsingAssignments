@@ -1,16 +1,18 @@
-{-# LANGUAGE MultiWayIf, LambdaCase, TypeApplications, TupleSections #-}
+{-# LANGUAGE MultiWayIf, LambdaCase, TypeApplications #-}
 module StartingFramework where
     
 
-import Prelude hiding ((*>),sequence,(<$), (<*))
-import Data.List (sort, find)
-import Data.Functor (($>))
-import Data.Maybe(listToMaybe, fromJust)
-import Control.Monad(replicateM, join)
+import Prelude hiding ((*>), sequence, (<$), (<*))
+import Data.List (sort, groupBy, sortBy)
+import Data.Maybe(listToMaybe)
+import Control.Monad(replicateM, join, forM_)
+import Data.Ord(comparing)
+import qualified Data.Map as M
+import Data.List.Split(chunksOf)
+import Text.PrettyPrint.Boxes as B
 import ParseLib.Abstract
 import System.Environment
 import Data.Char
-import Debug.Trace
 import System.IO
 
 -- Starting Framework
@@ -132,12 +134,19 @@ checkDateTime (DateTime d t _) = checkDate d && checkTime t
 checkDate :: Date -> Bool
 checkDate (Date (Year y) (Month m) (Day d))
     | d < 1  = False
-    | m < 1 || m > 12 = False
-    | y < 0 ||  y > 9999 = False
-    | m `elem` [1, 3, 5, 7, 8, 10, 12] = d <= 31
-    | m `elem` [4, 6, 9, 11] = d <= 30
-    | m == 2 = if leapYear then d <= 29 else d <= 28 where
-        leapYear = y `mod` 4 == 0 && y `mod` 100 /= 0 || y `mod` 400 == 0
+    | m < 1 || m > 12   = False
+    | y < 0 || y > 9999 = False
+    | otherwise         = d <= daysIn (Year y) (Month m)
+
+
+daysIn :: Year -> Month -> Int 
+daysIn y (Month m ) 
+    | m `elem` [1, 3, 5, 7, 8, 10, 12] = 31
+    | m `elem` [4, 6, 9, 11] = 30
+    | m == 2 = if leapYear y then 29 else 28 
+    
+leapYear :: Year -> Bool
+leapYear (Year y) = y `mod` 4 == 0 && y `mod` 100 /= 0 || y `mod` 400 == 0
 
 checkTime :: Time -> Bool
 checkTime (Time (Hour h) (Minute m) (Second s)) = h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59
@@ -173,13 +182,16 @@ data Token = PRODID String
     deriving (Eq, Ord, Show)
 
 calIdentifier' = greedy $ satisfy (\c -> c /= '\r')
-calIdentifierMulti :: Parser Char String
-calIdentifierMulti = (f) <$> satisfy (\c -> c == '\r') <*> satisfy (\c -> c == '\n') <*> satisfy (\c -> c == ' ')
-                where f c c2 c3= [c,c2,c3] 
-calIdentifier :: Parser Char String
-calIdentifier = f<$> listOf calIdentifier' calIdentifierMulti
-              where f xs = concat xs
 
+calIdentifier'' :: Parser Char String
+calIdentifier'' = f <$> satisfy (== '\r') <*> satisfy (== '\n') <*> satisfy (== ' ')
+                where f c c2 c3= [c,c2,c3] 
+
+calIdentifier :: Parser Char String
+calIdentifier = concat <$> listOf calIdentifier' calIdentifier''
+
+calIdentifier2 :: Parser Char [String]
+calIdentifier2 = listOf calIdentifier' calIdentifier''
 isAlphaUpper x = isAlpha x && isUpper x
 -- | Parses a specific given sequence of symbols.
 notToken :: [Char] -> Parser Char String
@@ -198,7 +210,7 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         [ PRODID   <$> pack (token "PRODID:") calIdentifier (token "\r\n")
         , VERSION  <$  token "VERSION:2.0\r\n"        
         , VEVENT   <$> pack (token "BEGIN:VEVENT\r\n") scanEvent (token "END:VEVENT\r\n")
-        ]<<|>skipLine
+        ] <<|>skipLine
     scanEvent = greedy1 $ choice 
         [ DTSTAMP     <$>  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
@@ -207,7 +219,7 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         , DESCRIPTION <$>  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
         , SUMMARY     <$>  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
         , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
-        ]<<|>skipLine
+        ] <<|> skipLine
 
 -- very difficult to figure this one out imo.
 parseCalendar :: Parser Token Calendar
@@ -219,6 +231,7 @@ parseHeader =
     ((\(PRODID s) -> s) <$> satisfy (\case (PRODID _) -> True ; _ -> False) <*  satisfy (\case VERSION -> True ; _ -> False) <|>
     (\(PRODID s) -> s) <$  satisfy (\case VERSION    -> True ; _ -> False) <*> satisfy (\case (PRODID _) -> True ; _ -> False))
     <* greedy (satisfy (\case JUNK -> True ; _ -> False))
+
 parseEvents :: Parser Token [Event]
 parseEvents = greedy $ anySymbol >>= parseEvent
 
@@ -263,7 +276,6 @@ readTokens p = parseStrWith p scanCalendar
 
 readCalendar :: FilePath -> IO (Maybe Calendar)
 readCalendar p = parseTokensWith p parseCalendar
-
 
 -- Exercise 9
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
@@ -321,6 +333,36 @@ lastDay (Year y) (Month m)
     | m == 2 = if leapYear then  29 else  28 where
         leapYear = y `mod` 4 == 0 && y `mod` 100 /= 0 || y `mod` 400 == 0
 -- Exercise 11
+
+bxMonth :: Year -> Month -> Calendar -> Box
+bxMonth yy mm (Calendar _ es) = let
+    maxDays     = daysIn yy mm 
+    dBegin      = Date{ year = yy, month = mm, day = Day 1}
+    dEnd        = Date{ year = yy, month = mm, day = Day maxDays }
+    events      = filter (\Event{dtStamp = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
+    grouped     = M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
+    hight       = foldr (\l cur -> max cur $ length l + 1) 1 grouped -- the maximum amount of events in a day
+    width       = 10 -- the width of a single elem in the calendar
+    groupedPlus = foldr (\k -> M.insertWith keep k []) grouped [1..maxDays]
+    toBox k l   = vcat left (text (show k) : map (\ Event{} -> text "-bla-") l)
+    dayBoxes    = map (alignHoriz top width . alignVert left hight) $ M.elems $ M.mapWithKey toBox groupedPlus 
+    weekBoxes   = map (hcat top) $ chunksOf 7 dayBoxes
+    monthBox    = vcat left weekBoxes
+    in monthBox
+
+keep a b = b 
+
 ppMonth :: Year -> Month -> Calendar -> String
-ppMonth yy mm (Calendar _ es)= show (filter (\e ->  unYear (year (date (dtStart e))) <=  (unYear yy) && unMonth ( month (date (dtStart e))) <= (unMonth mm) &&  unYear (year (date (dtEnd e))) >  (unYear yy) && unMonth( month (date (dtEnd e))) > (unMonth mm)) es)
+ppMonth yy mm c = 
+    let pretty = bxMonth yy mm c
+    in render pretty
     
+
+printIOCalendar :: Year -> Month -> FilePath -> IO ()
+printIOCalendar y m p = do 
+        mc <- readCalendar p 
+        case mc of 
+            Nothing -> return ()
+            Just c  -> 
+                let pretty = ppMonth y m c
+                in putStrLn pretty
