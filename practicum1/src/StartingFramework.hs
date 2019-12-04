@@ -204,14 +204,15 @@ notTokens [] _    = failp
 notTokens _ []    = failp
 notTokens (x:xs) (y:ys)= ((:)<$>satisfy (\c -> (c==x)||(c==y)) <*> (notTokens xs ys)) <|> ((:)<$>satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier)
 --Almost works for readingclub
-skipLine = JUNK  <$  ((notTokens "END:VCALENDAR" "END:VEVENT") ) <* calIdentifier <* (token "\r\n")
+skipLine = JUNK <$ notTokens "END:VCALENDAR" "END:VEVENT" <* calIdentifier <* token "\r\n"
+
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
         [ PRODID   <$> pack (token "PRODID:") calIdentifier (token "\r\n")
         , VERSION  <$  token "VERSION:2.0\r\n"        
         , VEVENT   <$> pack (token "BEGIN:VEVENT\r\n") scanEvent (token "END:VEVENT\r\n")
-        ] <<|>skipLine
+        ] <<|> skipLine
     scanEvent = greedy1 $ choice 
         [ DTSTAMP     <$>  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
         , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
@@ -222,7 +223,6 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
         ] <<|> skipLine
 
--- very difficult to figure this one out imo.
 parseCalendar :: Parser Token Calendar
 parseCalendar = Calendar <$> parseHeader <*> parseEvents
 
@@ -247,7 +247,7 @@ parseEvent (VEVENT es) = choice $ pure <$> event where
                     <*> fmap (fmap (\(DESCRIPTION s) -> s)) (optional $ satisfy (\case (DESCRIPTION _) -> True ; _ -> False))
                     <*> fmap (fmap (\(SUMMARY s) -> s))     (optional $ satisfy (\case (SUMMARY _)     -> True ; _ -> False))
                     <*> fmap (fmap (\(LOCATION s) -> s))    (optional $ satisfy (\case (LOCATION _)    -> True ; _ -> False))
-                    <*  greedy (fmap (\JUNK s -> s)        (satisfy (\case JUNK -> True ; _ -> False))) --idk, maar hoeft ook niet te werken.
+                    <*  greedy (fmap (\JUNK s -> s)         (satisfy (\case JUNK -> True ; _ -> False))) --idk, maar hoeft ook niet te werken.
                     <*  eof 
    
                     
