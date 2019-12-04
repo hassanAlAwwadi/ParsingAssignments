@@ -111,12 +111,13 @@ printDate (Date (Year y) (Month m) (Day d)) =
     in  yb ++ show y ++ mb ++ show m ++ db ++ show d
 
 printTime :: Time -> String
-printTime (Time (Hour h) (Minute m) (Second s)) = 
-    let 
-    check n = if | n < 10    -> "0"
-                 | otherwise -> ""
-    in check h ++ show h ++ check m ++ show m ++ check s ++ show s
+printTime (Time (Hour h) (Minute m) (Second s)) =  printT2 h ++ printT2 m ++ printT2 s
 
+printT2 s = 
+    if s < 10 
+    then '0' : show s
+    else show s
+    
 printutc :: Bool -> String
 printutc False = ""
 printutc True = "Z"
@@ -326,15 +327,18 @@ bxMonth yy mm (Calendar _ es) = let
     maxDays     = daysIn yy mm 
     dBegin      = Date{ year = yy, month = mm, day = Day 1}
     dEnd        = Date{ year = yy, month = mm, day = Day maxDays }
-    events      = filter (\Event{dtStamp = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
-    grouped     = M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
+    events      = filter (\Event{dtStart = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
+    grouped     = M.fromListWith (flip (++)) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
     hight       = foldr (\l cur -> max cur $ length l + 1) 1 grouped -- the maximum amount of events in a day
-    width       = 10 -- the width of a single elem in the calendar
+    width       = 14 -- the width of a single elem in the calendar
     groupedPlus = foldr (\k -> M.insertWith keep k []) grouped [1..maxDays]
-    toBox k l   = vcat left (text (show k) : map (\ Event{} -> text "-bla-") l)
+    simpTime t  = printT2 (unHour $ hour t) ++ ":" ++ printT2 (unMinute $ minute t) 
+    toBox k l   = vcat left (text (show k) : map (\Event{ dtStart = s, dtEnd = e } -> text $ simpTime (time s) ++ " - " ++ simpTime (time e)) l)
     dayBoxes    = map (alignHoriz top width . alignVert left hight) $ M.elems $ M.mapWithKey toBox groupedPlus 
-    weekBoxes   = map (hcat top) $ chunksOf 7 dayBoxes
-    monthBox    = vcat left weekBoxes
+    vertline    = vcat left $ replicate hight $ char '|'
+    weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxes
+    horLine     = hcat top $ replicate 6 (text $ replicate width '-' ++ "+") ++ [text $ replicate width '-']
+    monthBox    = punctuateV left horLine weekBoxes
     in monthBox
 
 keep a b = b 
