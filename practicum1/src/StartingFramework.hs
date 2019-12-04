@@ -111,12 +111,13 @@ printDate (Date (Year y) (Month m) (Day d)) =
     in  yb ++ show y ++ mb ++ show m ++ db ++ show d
 
 printTime :: Time -> String
-printTime (Time (Hour h) (Minute m) (Second s)) = 
-    let 
-    check n = if | n < 10    -> "0"
-                 | otherwise -> ""
-    in check h ++ show h ++ check m ++ show m ++ check s ++ show s
+printTime (Time (Hour h) (Minute m) (Second s)) =  printT2 h ++ printT2 m ++ printT2 s
 
+printT2 s = 
+    if s < 10 
+    then '0' : show s
+    else show s
+    
 printutc :: Bool -> String
 printutc False = ""
 printutc True = "Z"
@@ -203,7 +204,7 @@ notTokens [] _    = failp
 notTokens _ []    = failp
 notTokens (x:xs) (y:ys)= ((:)<$>satisfy (\c -> (c==x)||(c==y)) <*> (notTokens xs ys)) <|> ((:)<$>satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier)
 --Almost works for readingclub
-skipLine = JUNK  <$  ((notTokens "END:VCALENDAR" "END:VEVENT") ) <* calIdentifier <* (token "\r\n")
+skipLine = JUNK  <$  notTokens "END:VCALENDAR" "END:VEVENT" <* calIdentifier <* token "\r\n"
 readingClubTimezone = JUNK <$  greedy (satisfy (/=':'))
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
@@ -211,7 +212,7 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         [ PRODID   <$> pack (token "PRODID:") calIdentifier (token "\r\n")
         , VERSION  <$  token "VERSION:2.0\r\n"        
         , VEVENT   <$> pack (token "BEGIN:VEVENT\r\n") scanEvent (token "END:VEVENT\r\n")
-        ] <<|>skipLine
+        ] <<|> skipLine
     scanEvent = greedy1 $ choice 
         [ DTSTAMP     <$>  pack (token "DTSTAMP:" ) parseDateTime (token  "\r\n")
         , DTSTART     <$>  pack (token "DTSTART:" <|>token "DTSTART;"<* readingClubTimezone <* token ":") parseDateTime (token  "\r\n")
@@ -222,7 +223,6 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         , LOCATION    <$>  pack (token "LOCATION:"   ) calIdentifier  (token  "\r\n")
         ] <<|> skipLine
 
--- very difficult to figure this one out imo.
 parseCalendar :: Parser Token Calendar
 parseCalendar = Calendar <$> parseHeader <*> parseEvents
 
@@ -247,7 +247,7 @@ parseEvent (VEVENT es) = choice $ pure <$> event where
                     <*> fmap (fmap (\(DESCRIPTION s) -> s)) (optional $ satisfy (\case (DESCRIPTION _) -> True ; _ -> False))
                     <*> fmap (fmap (\(SUMMARY s) -> s))     (optional $ satisfy (\case (SUMMARY _)     -> True ; _ -> False))
                     <*> fmap (fmap (\(LOCATION s) -> s))    (optional $ satisfy (\case (LOCATION _)    -> True ; _ -> False))
-                    <*  greedy (satisfy (\case JUNK -> True ; _ -> False)) --idk, maar hoeft ook niet te werken.
+                    <*  greedy (satisfy (\case JUNK -> True ; _ -> False)) 
                     <*  eof 
    
                     
@@ -340,15 +340,17 @@ bxMonth yy mm (Calendar _ es) = let
     maxDays     = daysIn yy mm 
     dBegin      = Date{ year = yy, month = mm, day = Day 1}
     dEnd        = Date{ year = yy, month = mm, day = Day maxDays }
-    events      = filter (\Event{dtStamp = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
-    grouped     = M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
+    events      = filter (\Event{dtStart = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
+    grouped     = M.fromListWith (flip (++)) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
     hight       = foldr (\l cur -> max cur $ length l + 1) 1 grouped -- the maximum amount of events in a day
-    width       = 10 -- the width of a single elem in the calendar
+    width       = 14 -- the width of a single elem in the calendar
     groupedPlus = foldr (\k -> M.insertWith keep k []) grouped [1..maxDays]
-    toBox k l   = vcat left (text (show k) : map (\ Event{} -> text "-bla-") l)
-    dayBoxes    = map (alignHoriz top width . alignVert left hight) $ M.elems $ M.mapWithKey toBox groupedPlus 
-    weekBoxes   = map (hcat top) $ chunksOf 7 dayBoxes
-    monthBox    = vcat left weekBoxes
+    simpTime t  = printT2 (unHour $ hour t) ++ ":" ++ printT2 (unMinute $ minute t) 
+    toBox k l   = vcat left (text (show k) : map (\Event{ dtStart = s, dtEnd = e } -> text $ simpTime (time s) ++ " - " ++ simpTime (time e)) l)
+    vertline    = vcat left $ replicate hight $ char '|'
+    weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxes
+    horLine     = hcat top $ replicate 6 (text $ replicate width '-' ++ "+") ++ [text $ replicate width '-']
+    monthBox    = punctuateV left horLine weekBoxes
     in monthBox
 
 keep a b = b 
