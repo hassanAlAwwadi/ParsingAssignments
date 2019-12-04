@@ -347,7 +347,6 @@ bxMonth yy mm (Calendar _ es) = let
     groupedPlus = foldr (\k -> M.insertWith keep k []) grouped [1..maxDays]
     simpTime t  = printT2 (unHour $ hour t) ++ ":" ++ printT2 (unMinute $ minute t) 
     toBox k l   = vcat left (text (show k) : map (\Event{ dtStart = s, dtEnd = e } -> text $ simpTime (time s) ++ " - " ++ simpTime (time e)) l)
-    dayBoxes    = map (alignHoriz top width . alignVert left hight) $ M.elems $ M.mapWithKey toBox groupedPlus 
     vertline    = vcat left $ replicate hight $ char '|'
     weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxes
     horLine     = hcat top $ replicate 6 (text $ replicate width '-' ++ "+") ++ [text $ replicate width '-']
