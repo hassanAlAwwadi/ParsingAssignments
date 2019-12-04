@@ -204,8 +204,8 @@ notTokens [] _    = failp
 notTokens _ []    = failp
 notTokens (x:xs) (y:ys)= ((:)<$>satisfy (\c -> (c==x)||(c==y)) <*> (notTokens xs ys)) <|> ((:)<$>satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier)
 --Almost works for readingclub
-skipLine = JUNK <$ notTokens "END:VCALENDAR" "END:VEVENT" <* calIdentifier <* token "\r\n"
-
+skipLine = JUNK  <$  notTokens "END:VCALENDAR" "END:VEVENT" <* calIdentifier <* token "\r\n"
+readingClubTimezone = JUNK <$  greedy (satisfy (/=':'))
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
@@ -214,9 +214,9 @@ scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token 
         , VEVENT   <$> pack (token "BEGIN:VEVENT\r\n") scanEvent (token "END:VEVENT\r\n")
         ] <<|> skipLine
     scanEvent = greedy1 $ choice 
-        [ DTSTAMP     <$>  pack (token "DTSTAMP:"    ) parseDateTime (token  "\r\n")
-        , DTSTART     <$>  pack (token "DTSTART:"    ) parseDateTime (token  "\r\n")
-        , DTEND       <$>  pack (token "DTEND:"      ) parseDateTime (token  "\r\n")
+        [ DTSTAMP     <$>  pack (token "DTSTAMP:" ) parseDateTime (token  "\r\n")
+        , DTSTART     <$>  pack (token "DTSTART:" <|>token "DTSTART;"<* readingClubTimezone <* token ":") parseDateTime (token  "\r\n")
+        , DTEND       <$>  pack (token "DTEND:"   <|>token "DTEND;"<* readingClubTimezone <* token ":" ) parseDateTime (token  "\r\n")
         , UID         <$>  pack (token "UID:"        ) calIdentifier (token  "\r\n")                 
         , DESCRIPTION <$>  pack (token "DESCRIPTION:") calIdentifier (token  "\r\n")
         , SUMMARY     <$>  pack (token "SUMMARY:"    ) calIdentifier (token  "\r\n")
@@ -247,7 +247,7 @@ parseEvent (VEVENT es) = choice $ pure <$> event where
                     <*> fmap (fmap (\(DESCRIPTION s) -> s)) (optional $ satisfy (\case (DESCRIPTION _) -> True ; _ -> False))
                     <*> fmap (fmap (\(SUMMARY s) -> s))     (optional $ satisfy (\case (SUMMARY _)     -> True ; _ -> False))
                     <*> fmap (fmap (\(LOCATION s) -> s))    (optional $ satisfy (\case (LOCATION _)    -> True ; _ -> False))
-                    <*  greedy (fmap (\JUNK s -> s)         (satisfy (\case JUNK -> True ; _ -> False))) --idk, maar hoeft ook niet te werken.
+                    <*  greedy (satisfy (\case JUNK -> True ; _ -> False)) 
                     <*  eof 
    
                     
