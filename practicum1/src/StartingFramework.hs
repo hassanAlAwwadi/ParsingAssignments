@@ -327,10 +327,12 @@ bxMonth yy mm (Calendar _ es) = let
     dBegin      = Date{ year = yy, month = mm, day = Day 1}
     dEnd        = Date{ year = yy, month = mm, day = Day maxDays }
     events      = filter (\Event{dtStamp = s, dtEnd = e} -> date s >= dBegin && date e <= dEnd) es 
-    grouped     =  M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
+    grouped     = M.fromListWith (++) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
+    hight       = foldr (\l cur -> max cur $ length l + 1) 1 grouped -- the maximum amount of events in a day
+    width       = 10 -- the width of a single elem in the calendar
     groupedPlus = foldr (\k -> M.insertWith keep k []) grouped [1..maxDays]
-    toBox k l   = vcat left (para left 10 (show k) : map (\ Event{} -> para left 10 "-bla-") l)
-    dayBoxes    = M.elems $ M.mapWithKey toBox groupedPlus 
+    toBox k l   = vcat left (text (show k) : map (\ Event{} -> text "-bla-") l)
+    dayBoxes    = map (alignHoriz top width . alignVert left hight) $ M.elems $ M.mapWithKey toBox groupedPlus 
     weekBoxes   = map (hcat top) $ chunksOf 7 dayBoxes
     monthBox    = vcat left weekBoxes
     in monthBox
