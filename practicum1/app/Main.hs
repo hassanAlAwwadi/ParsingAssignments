@@ -8,7 +8,6 @@ import Data.Maybe(listToMaybe)
 import Control.Monad(replicateM, forM_)
 import qualified Data.Map as M
 import Data.List.Split(chunksOf)
-import qualified Data.Dates as DT
 import Text.PrettyPrint.Boxes as B
 import ParseLib.Abstract
 import System.Environment

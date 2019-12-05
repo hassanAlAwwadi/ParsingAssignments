@@ -1,0 +1,4 @@
+ghcid "--command=stack ghci"
+:set -Wall
+:set -isrc
+:load Main
