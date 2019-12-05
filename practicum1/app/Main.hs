@@ -5,7 +5,7 @@ module Main where
 import Prelude hiding ((*>), (<$), (<*))
 import Data.List (sort)
 import Data.Maybe(listToMaybe)
-import Control.Monad(replicateM, forM_)
+import Control.Monad(replicateM)
 import qualified Data.Map as M
 import Data.List.Split(chunksOf)
 import Text.PrettyPrint.Boxes as B
@@ -112,6 +112,7 @@ printDate (Date (Year y) (Month m) (Day d)) =
 printTime :: Time -> String
 printTime (Time (Hour h) (Minute m) (Second s)) =  printT2 h ++ printT2 m ++ printT2 s
 
+printT2 :: (Ord a, Num a, Show a) => a -> String
 printT2 s = 
     if s < 10 
     then '0' : show s
@@ -122,10 +123,12 @@ printutc False = ""
 printutc True = "Z"
 
 -- Exercise 4
+parsePrint :: String -> Maybe String
 parsePrint s = printDateTime <$> run parseDateTime s
 
 -- Exercise 5
 
+parseCheck :: String -> Maybe Bool
 parseCheck s = checkDateTime <$> run parseDateTime s
 
 checkDateTime :: DateTime -> Bool
@@ -144,6 +147,7 @@ daysIn y (Month m )
     | m `elem` [1, 3, 5, 7, 8, 10, 12] = 31
     | m `elem` [4, 6, 9, 11] = 30
     | m == 2 = if leapYear y then 29 else 28 
+    | otherwise = 31
     
 leapYear :: Year -> Bool
 leapYear (Year y) = y `mod` 4 == 0 && y `mod` 100 /= 0 || y `mod` 400 == 0
@@ -181,7 +185,8 @@ data Token = PRODID String
            | JUNK
     deriving (Eq, Ord, Show)
 
-calIdentifier' = greedy $ satisfy (\c -> c /= '\r')
+calIdentifier' :: Parser Char String
+calIdentifier' = greedy $ satisfy (/= '\r')
 
 calIdentifier'' :: Parser Char String
 calIdentifier'' = f <$> satisfy (== '\r') <*> satisfy (== '\n') <*> satisfy (== ' ')
@@ -192,19 +197,26 @@ calIdentifier = concat <$> listOf calIdentifier' calIdentifier''
 
 calIdentifier2 :: Parser Char [String]
 calIdentifier2 = listOf calIdentifier' calIdentifier''
+
+isAlphaUpper :: Char -> Bool
 isAlphaUpper x = isAlpha x && isUpper x
+
 -- | Parses a specific given sequence of symbols.
 notToken :: String -> Parser Char String
 notToken []     = failp
 notToken (x:xs) = ((:)<$>satisfy (==x) <*> notToken xs) <|> ((:)<$>satisfy (/=x) <*> calIdentifier)
            
-notTokens :: [Char] -> [Char] -> Parser Char String
+notTokens :: String -> String -> Parser Char String
 notTokens [] _    = failp
 notTokens _ []    = failp
-notTokens (x:xs) (y:ys)= ((:)<$>satisfy (\c -> (c==x)||(c==y)) <*> (notTokens xs ys)) <|> ((:)<$>satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier)
---Almost works for readingclub
+notTokens (x:xs) (y:ys)=  (:) <$> satisfy (\ c -> (c == x) || (c == y)) <*> notTokens xs ys <|> (:) <$> satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier
+
+skipLine :: Parser Char Token
 skipLine = JUNK  <$  notTokens "END:VCALENDAR" "END:VEVENT" <* calIdentifier <* token "\r\n"
+
+readingClubTimezone :: Parser Char Token
 readingClubTimezone = JUNK <$  greedy (satisfy (/=':'))
+
 scanCalendar :: Parser Char [Token]
 scanCalendar = pack (token "BEGIN:VCALENDAR\r\n") (greedy scanCalendar') (token "END:VCALENDAR\r\n") where 
     scanCalendar' = choice 
@@ -266,6 +278,7 @@ parseStrWith p prs = do
     content <- hGetContents handle
     return $ run prs content
 
+parseTokensWith :: FilePath -> Parser Token b -> IO (Maybe b)
 parseTokensWith p prs = do
     tokens <- readTokens p
     return $ tokens >>= run prs 
@@ -317,21 +330,16 @@ checkOverlapping (Calendar _ es) = not $ null [() | e1 <- es, e2 <- es, e1 /= e2
 timeSpent :: String -> Calendar -> Int
 timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
     timeSpent' Event{dtStart = s1, dtEnd = e1} = e1 <-> s1
-    (<->) DateTime { date = Date {day = Day {unDay = dd},month = Month {unMonth = mo},year = Year {unYear = yy}}  , time = Time {hour = Hour {unHour = hh} , minute = Minute {unMinute =mm}  , second = Second {unSecond = ss}}}  
-          DateTime { date = Date {day = Day {unDay = dd2},month = Month {unMonth = mo2},year = Year {unYear = yy2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second = Second {unSecond =ss2}}} 
+    (<->) DateTime { date = Date {day = Day {unDay = dd},month = Month {unMonth = mo},year = Year {unYear = yy}}  , time = Time {hour = Hour {unHour = hh} , minute = Minute {unMinute =mm}  , second = Second  { unSecond = ss  }}}  
+          DateTime { date = Date {day = Day {unDay = dd2},month = Month {unMonth = mo2},year = Year {unYear = yy2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second = Second { unSecond = ss2 }}} 
           |yy==yy2 && mo==mo2                               =  ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+ 60 * 24 * (dd - dd2)
           |otherwise                                        =  ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+ 60 * 24 * (totalDays mo2 mo yy2 yy + dd - dd2) 
             where totalDays m m2 y1 y2  |m==m2 && y1 == y2  =  0
                                         |m>m2 && y2 == y1   =  0
                                         |y2<y1              =  0
-                                        |m == 12            =  totalDays 1 m2 (y1+1) y2 +lastDay (Year y1) (Month m)
-                                        |otherwise          =  totalDays (m+1) m2 y1 y2 + lastDay (Year y1) (Month m)
-lastDay :: Year -> Month -> Int
-lastDay (Year y) (Month m)
-    | m `elem` [1, 3, 5, 7, 8, 10, 12] = 31
-    | m `elem` [4, 6, 9, 11] = 30
-    | m == 2 = if leapYear then  29 else  28 where
-        leapYear = y `mod` 4 == 0 && y `mod` 100 /= 0 || y `mod` 400 == 0
+                                        |m == 12            =  totalDays 1 m2 (y1+1) y2 + daysIn (Year y1) (Month m)
+                                        |otherwise          =  totalDays (m+1) m2 y1 y2 + daysIn (Year y1) (Month m)
+
 -- Exercise 11
 
 bxMonth :: Year -> Month -> Calendar -> Box
@@ -353,7 +361,8 @@ bxMonth yy mm (Calendar _ es) = let
     monthBox    = punctuateV left horLine weekBoxes
     in monthBox
 
-keep a b = b 
+keep :: a -> b -> b
+keep _ b = b 
 
 ppMonth :: Year -> Month -> Calendar -> String
 ppMonth yy mm c = 
