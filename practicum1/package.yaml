@@ -25,6 +25,7 @@ dependencies:
 - boxes
 - split
 - containers
+- dates
 
 library:
   source-dirs: src
