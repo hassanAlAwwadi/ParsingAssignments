@@ -32,6 +32,7 @@ packages:
 - .
 extra-deps:
 - uu-tc-2015.1.1@sha256:c41c7e3e07e169c82b0467a301fcda2002ea76903d779a7d18e62b68dde0e4cb,2090
+- time-1.9.3@sha256:8f1b5448722a12a952248b356c9eb366e351226543d9086a2da71270522d5f45,5679
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:

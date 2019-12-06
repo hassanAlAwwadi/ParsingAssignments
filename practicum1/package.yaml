@@ -25,6 +25,8 @@ dependencies:
 - boxes
 - split
 - containers
+- time >= 1.9.3 
+- fixed 
 
 library:
   source-dirs: src

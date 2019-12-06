@@ -13,6 +13,8 @@ import ParseLib.Abstract
 import System.Environment
 import Data.Char
 import System.IO
+import Data.Time hiding (Day,utc,parseTime)
+import Data.Fixed
 
 -- Starting Framework
 
@@ -329,17 +331,11 @@ checkOverlapping (Calendar _ es) = not $ null [() | e1 <- es, e2 <- es, e1 /= e2
 
 timeSpent :: String -> Calendar -> Int
 timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
-    timeSpent' Event{dtStart = s1, dtEnd = e1} = e1 <-> s1
-    (<->) DateTime { date = Date {day = Day {unDay = dd},month = Month {unMonth = mo},year = Year {unYear = yy}}  , time = Time {hour = Hour {unHour = hh} , minute = Minute {unMinute =mm}  , second = Second  { unSecond = ss  }}}  
-          DateTime { date = Date {day = Day {unDay = dd2},month = Month {unMonth = mo2},year = Year {unYear = yy2}} , time = Time {hour = Hour {unHour = hh2}, minute = Minute {unMinute =mm2}, second = Second { unSecond = ss2 }}} 
-          |yy==yy2 && mo==mo2                               =  ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+ 60 * 24 * (dd - dd2)
-          |otherwise                                        =  ((ss-ss2) `mod` 60) + mm-mm2 + 60 *(hh-hh2)+ 60 * 24 * (totalDays mo2 mo yy2 yy + dd - dd2) 
-            where totalDays m m2 y1 y2  |m==m2 && y1 == y2  =  0
-                                        |m>m2 && y2 == y1   =  0
-                                        |y2<y1              =  0
-                                        |m == 12            =  totalDays 1 m2 (y1+1) y2 + daysIn (Year y1) (Month m)
-                                        |otherwise          =  totalDays (m+1) m2 y1 y2 + daysIn (Year y1) (Month m)
+    timeSpent' Event{dtStart = start, dtEnd = end} = end <-> start
+        where e' <-> s' = fromInteger (div' ((nominalDiffTimeToSeconds (diffUTCTime (dateTimeToUTC e') (dateTimeToUTC s')))) 60)
 
+dateTimeToUTC :: DateTime -> UTCTime
+dateTimeToUTC a = UTCTime { utctDay = fromGregorian (toInteger (unYear (year (date a)))) (unMonth (month (date a))) (unDay (day (date a))), utctDayTime = secondsToDiffTime (toInteger ((unHour (hour (time a)))*3600 + (unMinute (minute (time a))) * 60  + (unSecond (second (time a))))) }
 -- Exercise 11
 
 bxMonth :: Year -> Month -> Calendar -> Box
