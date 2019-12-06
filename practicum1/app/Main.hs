@@ -390,7 +390,7 @@ bxMonth yy mm (Calendar _ es _) = let
     -- | all the events that start the same day get added together in the map
     grouped     = M.fromListWith (flip (++)) $ map (\e -> (unDay $ day $ date $ dtStart e, [e])) events
     -- | the maximum amount of events in a day
-    hight       = foldr (\l cur -> max cur $ length l + 1) 1 grouped 
+    height       = foldr (\l cur -> max cur $ length l + 1) 1 grouped 
     -- | the width of a single elem in the calendar
     width       = 14 
     -- | empty days get added to the map                                                
@@ -400,10 +400,10 @@ bxMonth yy mm (Calendar _ es _) = let
     -- | turns a list of events into a vertically stacked box of just the times
     toBox k l   = vcat left (text (show k) : map (\Event{ dtStart = s, dtEnd = e } -> text $ simpTime (time s) ++ " - " ++ simpTime (time e)) l)
     -- | each day as a box. Ordered by key so day 1 .. day 31
-    dayBoxes    = map (align top left hight width) $ M.elems $ M.mapWithKey toBox groupedPlus 
-    vertline    = vcat left $ replicate hight $ char '|'
+    dayBoxes    = map (align top left height width) $ M.elems $ M.mapWithKey toBox groupedPlus 
+    vertline    = vcat left $ replicate height $ char '|'
     -- | splits the list into chunks of 7 (week length) and horizontally stitches those days together into a single box
-    weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxes
+    weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxesprint
     horLine     = hcat top $ replicate 6 (text $ replicate width '-' ++ "+") ++ [text $ replicate width '-']
     -- | vertically stitches the weeks together into a single box
     monthBox    = punctuateV left horLine weekBoxes
