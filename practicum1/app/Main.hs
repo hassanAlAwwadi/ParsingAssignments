@@ -335,7 +335,7 @@ timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == J
         where e' <-> s' = fromInteger (div' ((nominalDiffTimeToSeconds (diffUTCTime (dateTimeToUTC e') (dateTimeToUTC s')))) 60)
 
 dateTimeToUTC :: DateTime -> UTCTime
-dateTimeToUTC a = UTCTime { utctDay = fromGregorian (toInteger (unYear (year (date a)))) (unMonth (month (date a))) (unDay (day (date a))), utctDayTime = secondsToDiffTime (toInteger ((unHour (hour (time a)))*3600 + (unMinute (minute (time a))) * 60  + (unSecond (second (time a))))) }
+dateTimeToUTC a = UTCTime { utctDay = fromGregorian (toInteger (unYear (year (date a)))) (unMonth (month (date a))) (unDay (day (date a))), utctDayTime = secondsToDiffTime (toInteger ((unHour (hour (time a)))*3600 + (unMinute (minute (time a))) * 60  )) }
 -- Exercise 11
 
 bxMonth :: Year -> Month -> Calendar -> Box
