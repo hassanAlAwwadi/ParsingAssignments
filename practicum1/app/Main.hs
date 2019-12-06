@@ -367,12 +367,15 @@ checkOverlapping (Calendar _ es _) = not $ null [() | e1 <- es, e2 <- es, e1 /= 
     overlap Event{dtStart = s1, dtEnd = e1} Event{dtStart = s2, dtEnd = e2} = e1 > s2 && e1 < e2 || e2 > s1 && e2 < e1
 
 timeSpent :: String -> Calendar -> Int
-timeSpent s (Calendar _ es)=  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
+timeSpent s (Calendar _ es _) =  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
     timeSpent' Event{dtStart = start, dtEnd = end} = end <-> start
-        where e' <-> s' = fromInteger (div' ((nominalDiffTimeToSeconds (diffUTCTime (dateTimeToUTC e') (dateTimeToUTC s')))) 60)
+    e' <-> s' = fromInteger $ div' (nominalDiffTimeToSeconds $ diffUTCTime (dateTimeToUTC e') (dateTimeToUTC s')) 60
 
 dateTimeToUTC :: DateTime -> UTCTime
-dateTimeToUTC a = UTCTime { utctDay = fromGregorian (toInteger (unYear (year (date a)))) (unMonth (month (date a))) (unDay (day (date a))), utctDayTime = secondsToDiffTime (toInteger ((unHour (hour (time a)))*3600 + (unMinute (minute (time a))) * 60  )) }
+dateTimeToUTC DateTime{date = d, time = t} = UTCTime { 
+    utctDay = fromGregorian (toInteger $ unYear $ year d) (unMonth $ month d) (unDay $ day d), 
+    utctDayTime = secondsToDiffTime $ toInteger $ unHour (hour t) *3600 + unMinute (minute t) * 60 + unSecond (second t)
+    }
 -- Exercise 11
 
 -- import function that turns a date into a box
