@@ -332,7 +332,7 @@ printCalendar c =
     "PRODID:" ++ prodId c ++ "\r\n" ++
     "VERSION:2.0\r\n"               ++
     (calEvents c >>= printEvent)    ++
-
+    foldr (\(k,v) acc -> acc ++ show k ++ show v ++ "\r\n") "" (cKeyVal c) ++ 
     "END:VCALENDAR"
 
 printEvent :: Event -> String
@@ -344,7 +344,9 @@ printEvent e =
     "DTSEND:"  ++ printDateTime (dtEnd   e) ++ "\r\n" ++
     "DESCRIPTION:" ++ printMaybeS (description e)     ++
     "SUMMARY:"  ++ printMaybeS (summary e)            ++
-    "LOCATION:" ++ printMaybeS (location e)    
+    "LOCATION:" ++ printMaybeS (location e)           ++ 
+    foldr (\(k,v) acc -> acc ++ show k ++ show v ++ "\r\n") "" (eKeyVal e) ++
+    "END:VEVENT\r\n"
 
 
 printMaybeS :: Maybe String -> String
