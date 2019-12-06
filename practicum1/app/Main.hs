@@ -403,7 +403,7 @@ bxMonth yy mm (Calendar _ es _) = let
     dayBoxes    = map (align top left height width) $ M.elems $ M.mapWithKey toBox groupedPlus 
     vertline    = vcat left $ replicate height $ char '|'
     -- | splits the list into chunks of 7 (week length) and horizontally stitches those days together into a single box
-    weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxesprint
+    weekBoxes   = map (punctuateH top vertline) $ chunksOf 7 dayBoxes
     horLine     = hcat top $ replicate 6 (text $ replicate width '-' ++ "+") ++ [text $ replicate width '-']
     -- | vertically stitches the weeks together into a single box
     monthBox    = punctuateV left horLine weekBoxes
