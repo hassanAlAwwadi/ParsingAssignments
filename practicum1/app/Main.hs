@@ -369,7 +369,7 @@ checkOverlapping (Calendar _ es _) = not $ null [() | e1 <- es, e2 <- es, e1 /= 
 timeSpent :: String -> Calendar -> Int
 timeSpent s (Calendar _ es _) =  sum (fmap timeSpent' (filter (\e -> summary e == Just s) es)) where
     timeSpent' Event{dtStart = start, dtEnd = end} = end <-> start
-    e' <-> s' = fromInteger $ div' (nominalDiffTimeToSeconds $ diffUTCTime (dateTimeToUTC e') (dateTimeToUTC s')) 60
+    e' <-> s' = fromInteger $ div' (nominalDiffTimeToSeconds $ diffUTCTime (dateTimeToUTC e') (dateTimeToUTC s')) 60 --div by 60 to convert to minutes
 
 dateTimeToUTC :: DateTime -> UTCTime
 dateTimeToUTC DateTime{date = d, time = t} = UTCTime { 
