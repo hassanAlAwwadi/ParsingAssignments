@@ -210,12 +210,14 @@ isAlphaUpper x = isAlpha x && isUpper x
 notToken :: String -> Parser Char String
 notToken []     = failp
 notToken (x:xs) = ((:) <$> satisfy (==x) <*> notToken xs) <|> ((:) <$> satisfy (/=x) <*> calIdentifier)
-           
+  
+--ugly solution for readingclub
 notTokens :: String -> String -> Parser Char String
 notTokens [] _    = failp
 notTokens _ []    = failp
 notTokens (x:xs) (y:ys)=  (:) <$> satisfy (\ c -> (c == x) || (c == y)) <*> notTokens xs ys <|> (:) <$> satisfy (\c-> (c/=x) && (c/=y)) <*> calIdentifier
 
+--ugly solution for readingclub
 skipLine :: Parser Char Token
 skipLine = JUNK <$ notTokens "END:VCALENDAR" "END:VEVENT" <* calIdentifier <* token "\r\n"
 
