@@ -3,18 +3,28 @@ module Arrow where
 import Prelude hiding ((<*), (<$))
 import ParseLib.Abstract
 import Data.Functor((<&>))
-import Data.Maybe(mapMaybe)
+import Data.Maybe(mapMaybe, fromMaybe)
 import Data.Map (Map, (!?))
 import qualified Data.Map as L
 import Control.Monad (replicateM)
-import Data.List(permutations, intercalate)
+import Data.List(permutations, intercalate, find)
 import Data.Char (isSpace)
 
 
+-- Beware: keys are (y,x) for some reason. 
 type Space     =  Map Pos Contents
 type Size      =  Int
 type Pos       =  (Int, Int)
 data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq)
+
+type Environment = Map Ident Commands
+
+type Stack       =  Commands
+data ArrowState  =  ArrowState Space Pos Heading Stack
+
+data Step  =  Done  Space Pos Heading
+           |  Ok    ArrowState
+           |  Fail  String
 
 parseSpace :: Parser Char Space
 parseSpace =
@@ -44,7 +54,7 @@ contentsTable =
 -- These three should be defined by you
 type Commands = [Command]
 type Ident = String
-type Heading = ()
+type Heading = (Int,Int)
 
 type Program = [Rule]
 type Rule = (Ident, Commands)
@@ -129,14 +139,7 @@ noFailureCAlgebra = (True, True, True, True, const True, const $ noFailure . map
     noFailure pts =  Underscore `elem` pts || pts `elem` perms 
     perms = permutations [Pat Empty, Pat Lambda, Pat Debris, Pat Asteroid, Pat Boundary]
 
-type Environment = Map Ident Commands
 
-type Stack       =  Commands
-data ArrowState  =  ArrowState Space Pos Heading Stack
-
-data Step  =  Done  Space Pos Heading
-           |  Ok    ArrowState
-           |  Fail  String
 
 -- 7 
 printSpace :: Space -> String
@@ -151,7 +154,7 @@ printSpace space = let
                 Just Lambda   -> '\\' 
                 Just Debris   -> '%'
                 Just Asteroid -> 'O'
-                Just Boundary -> '#'  
+                Just Boundary -> '#'
 
 fmapf = flip fmap
 
@@ -167,3 +170,73 @@ toEnvironment s =
     let lexed  = undefined -- lexing  here 
         parsed = undefined -- parsing here 
     in  if check parsed then L.fromList parsed else L.empty
+
+
+-- 9
+
+
+-- data Command = Go | Take | Mark | CNothing | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
+step :: Environment -> ArrowState -> Step
+step env = step' where 
+    step' (ArrowState s p h []    ) = Done s p h
+    step' (ArrowState s p h (c:cs)) = case c of 
+        Go          -> case s !? (p `vp` h) of 
+            Just Asteroid -> Ok (ArrowState s p h cs)
+            Just Boundary -> Ok (ArrowState s p h cs)
+            _          -> Ok (ArrowState s (p `vp` h) h cs)
+        Take       -> Ok (ArrowState (L.insert p Empty s) p h cs)
+        Mark       -> Ok (ArrowState (L.insert p Lambda s) p h cs)
+        CNothing   -> Ok (ArrowState s p h cs)
+        Turn d -> Ok (ArrowState s p (turn d h) cs)
+        Case d as  -> let col = Pat $ fromMaybe Empty $ s !? (p `vp` turn d h) 
+                          instr = findInstr col as
+                      in  case instr of 
+                        Nothing -> Fail "No matching pattern" 
+                        Just n  -> Ok (ArrowState s p h (n++cs))
+        CIdent i   -> case env !? i of 
+            Nothing -> Fail "Undefined function" 
+            Just n  -> Ok (ArrowState s p h (n++cs))
+
+vp :: (Int,Int) -> (Int, Int) -> (Int,Int)
+vp (x,y) (v,w) = (x+v,y+w) 
+
+
+turn  :: Dir -> Heading -> Heading 
+turn Front h = h
+turn Arrow.Left (0,1) = (-1,0)
+turn Arrow.Left (-1,0) = (0,-1)
+turn Arrow.Left (0,-1) = (1,0)
+turn Arrow.Left (1,0) = (0,1)
+turn Arrow.Right (0,1) = (1,0)
+turn Arrow.Right (1,0) = (0,-1)
+turn Arrow.Right (0,-1) = (-1,0)
+turn Arrow.Right (-1,0) = (0,1)
+
+
+findInstr :: Pat -> Alts -> Maybe Commands 
+findInstr c alts = snd <$> case find (\a -> fst a ==c ) alts of 
+    Nothing -> find (\a -> fst a == Underscore) alts 
+    Just cs -> Just cs
+
+
+-- 10 
+-- blabla recursion. 
+
+-- 11
+
+interactive :: Environment -> ArrowState -> IO ()
+interactive = undefined
+
+batch :: Environment -> ArrowState -> (Space,Pos,Heading)
+batch env state = case until done (batch' env) (Ok state) of 
+    Done s p c -> (s,p,c)
+    Fail s -> error s
+
+
+batch' :: Environment -> Step -> Step
+batch' env (Ok st) = step env st
+batch' _ s          = s
+
+done :: Step -> Bool
+done (Ok st) = False
+done _ = True
