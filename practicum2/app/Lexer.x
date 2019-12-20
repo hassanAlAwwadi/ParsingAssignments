@@ -9,7 +9,7 @@ $alpha = [a-zA-Z]		-- alphabetic characters
 
 tokens :-
   $white+				;
-  \nothing      ;
+  \n            ;
   \-\>          { \s -> TokenArrow }
   \.            { \s -> TokenDot }
   \,            { \s -> TokenComma }
