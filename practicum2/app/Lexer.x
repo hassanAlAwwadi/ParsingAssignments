@@ -9,9 +9,10 @@ $alpha = [a-zA-Z]		-- alphabetic characters
 
 tokens :-
   $white+				;
-  \-\>            { \s -> Arrow }
+  \nothing      ;
+  \-\>          { \s -> Arrow }
   \.            { \s -> Dot }
-  \,             { \s -> Comma }
+  \,            { \s -> Comma }
   go            { \s -> Go }
   take          { \s -> Take }
   mark          { \s -> Mark }
@@ -27,6 +28,8 @@ tokens :-
   empty         { \s -> Empty}
   Lambda        { \s -> Lambda}  
   Boundary      { \s -> Boundary}
+  Asteroid      { \s -> Asteroid}
+  Debris        { \s -> Debris}
   \_            { \s -> Underscore}
   [$digit$alpha\+\-].* { \s -> Ident}
 {
