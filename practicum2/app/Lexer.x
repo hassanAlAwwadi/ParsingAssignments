@@ -1,5 +1,6 @@
-module Lexer (lexer) where
-
+{
+  module Main (main) where
+}
 
 %wrapper "basic"
 
@@ -22,11 +23,10 @@ tokens :-
   left\s*       { \s -> Left}
   right\s*      { \s -> Right}
   front\s*      { \s -> Front}
-  ;\s*  { \s -> Semicolon}
+  ;\s*          { \s -> Semicolon}
   empty\s*      { \s -> Empty}
   Lambda\s*     { \s -> Lambda}  
   Boundary\s*   { \s -> Boundary}
-  -- --.*\n        { \s -> COmment} 
 
 {
 -- Each action has type :: String -> Token
@@ -40,7 +40,7 @@ data Token = Arrow|Dot|Comma|Go|Take|Mark|Nothing
 	deriving (Eq,Show)
 data Idents = [Ident] 
 data Ident = Letter|Digit|+|-
-lexer = do
+main = do
   s <- getContents
   print (alexScanTokens s)
 }

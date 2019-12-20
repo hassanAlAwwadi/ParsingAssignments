@@ -9,6 +9,8 @@ copyright:           "2019 Author name here"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- app/Lexer.x
+- app/Parser.y
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -24,6 +26,9 @@ dependencies:
 - uu-tc
 - containers
 
+build-tools:
+- alex
+- happy
 library:
   source-dirs: src
 
