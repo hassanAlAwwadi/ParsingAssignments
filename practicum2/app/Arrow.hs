@@ -36,11 +36,20 @@ contentsTable :: [(Contents,Char)]
 contentsTable =
   [  (Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
---2 WIP
-data Program = Functions  [(Name,FunctionCode)]
-data FunctionCode = Case String Cases | Commands
-type Cases = [(String,Commands)]
-type Name = String
+
+-- 2?
+-- These three should be defined by you
+type Commands = [Command]
+type Ident = String
+type Heading = ()
+
+type Program = [Rule]
+type Rule = (Ident, Commands)
+data Command = Go | Take | Mark | Nothing | Turn Dir | Case Dir Alts | CIdent Ident
+data Dir = Left | Right | Front
+type Alts = [Alt]
+type Alt = (Pat, Commands)
+data Pat = Pat Contents | Emtpy | Underscore
 
 --4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
 -- Left recursion is more efficient in happy 
@@ -48,10 +57,6 @@ type Name = String
 -- parse stack for long sequences of items. 
 
 
--- These three should be defined by you
-type Ident = ()
-type Commands = ()
-type Heading = ()
 
 type Environment = Map Ident Commands
 
