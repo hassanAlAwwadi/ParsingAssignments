@@ -36,6 +36,11 @@ contentsTable :: [(Contents,Char)]
 contentsTable =
   [  (Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
+--2 WIP
+data Program = Functions  [(Name,FunctionCode)]
+data FunctionCode = Case String Cases | Commands
+type Cases = [(String,Commands)]
+type Name = String
 -- These three should be defined by you
 type Ident = ()
 type Commands = ()
