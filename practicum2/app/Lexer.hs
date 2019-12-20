@@ -1,6 +1,5 @@
-{
-module Main (main) where
-}
+module Lexer (lexer) where
+
 
 %wrapper "basic"
 
@@ -27,7 +26,7 @@ tokens :-
   empty\s*      { \s -> Empty}
   Lambda\s*     { \s -> Lambda}  
   Boundary\s*   { \s -> Boundary}
-  --.*\n        { \s -> Debris} 
+  -- --.*\n        { \s -> COmment} 
 
 {
 -- Each action has type :: String -> Token
@@ -41,7 +40,7 @@ data Token = Arrow|Dot|Comma|Go|Take|Mark|Nothing
 	deriving (Eq,Show)
 data Idents = [Ident] 
 data Ident = Letter|Digit|+|-
-main = do
+lexer = do
   s <- getContents
   print (alexScanTokens s)
 }
