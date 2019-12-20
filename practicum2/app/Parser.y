@@ -33,26 +33,29 @@ import Lexer
 
 %%
 -- tussen de { } moet haskell code die sutff doet
-Rule    : ident "->" Cmds   {}--{Rule ($1,$3)}
-Cmds    :Cmds ',' Cmd       {}--{Command $1 $3}
-Cmd     :go                 {}--{Go $1}
-        | take              {}--{Take $1}
-        | mark              {}--{Mark $1}
-        | nothing           {}--{Nothing $1}
-        | turn Dir          {}--{Turn $1 $2}
-        | case Dir of Alts end {}--{Case $2 $4}
-        | ident             {}--{Ident $1}
-Dir     : left              {}--{Left $1}
-        | right             {}--{Right $1}
-        | front             {}--{Front $1}
-Alts    : Alts ';' Alt      {}--{Alt $1 $3}
-Alt     : Pat "->" Cmds     {}--{ Pattern $1 $3}
-Pat     : empty             { Empty }
-        | Lambda            { Lambda }
-        | Debris            { Debris }
-        | Asteroid          { Asteroid }
-        | Boundary          { Boundary }
-        | '_'               { Underscore }
+Program     :Program Rule       {}--{$1++$2}
+            | Rule              {}--{$1}
+Rule        : ident "->" Commands   {}--{($1, $3)}
+Commands    :Commands ',' Command       {}--{$1 ++ $3}
+            |Command                {}--{$1}
+Command     :go                 {}--{Go}
+            | take              {}--{Take}
+            | mark              {}--{Mark}
+            | nothing           {}--{Nothing'}
+            | turn Dir          {}--{Turn $2}
+            | case Dir of Alts end {}--{Case $2 $4}
+            | ident             {}--{$1}
+Dir         : left              {Left'}
+            | right             {Right'}
+            | front             {Front}
+Alts        : Alts ';' Alt      {}--{$1 ++ $3}
+Alt         : Pat "->" Commands     {}--{ ($1, $3)}
+Pat         : empty             { Empty }
+            | Lambda            { Lambda }
+            | Debris            { Debris }
+            | Asteroid          { Asteroid }
+            | Boundary          { Boundary }
+            | '_'               { Underscore }
 
 {
 parseError :: [Token] -> a
@@ -63,7 +66,7 @@ type Ident = String
 type Heading = ()
 type Program = [Rule]
 type Rule = (Ident, Commands)
-data Command = Go | Take | Mark | Nothing' | Turn
+data Command = Go | Take | Mark | Nothing' | Turn Dir| Case Dir Alts
 data Dir = Left' | Right' | Front
 type Alts = [Alt]
 type Alt = (Pat, Commands)
