@@ -45,18 +45,40 @@ type Heading = ()
 
 type Program = [Rule]
 type Rule = (Ident, Commands)
-data Command = Go | Take | Mark | Nothing | Turn Dir | Case Dir Alts | CIdent Ident
+data Command = Go | Take | Mark | CNothing | Turn Dir | Case Dir Alts | CIdent Ident
 data Dir = Left | Right | Front
 type Alts = [Alt]
 type Alt = (Pat, Commands)
 data Pat = Pat Contents | Emtpy | Underscore
 
---4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
+-- 4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
 -- Left recursion is more efficient in happy 
 -- because right recursion wil overflow the
 -- parse stack for long sequences of items. 
 
+-- 5
+type ProgramAlgebra r = [Rule] -> r
+foldProgram :: ProgramAlgebra r -> Program -> r
+foldProgram = ($)
 
+type RuleAlgebra r = (Ident, Commands) -> r
+foldRule :: RuleAlgebra r -> Rule -> r
+foldRule = ($)
+
+type CommandsAlgebra r = [Command] -> r
+foldCommands :: CommandsAlgebra r -> Commands -> r
+foldCommands = ($)
+
+type CommandAlgebra r = (r, r, r, r, Dir -> r, Dir -> Alts -> r, Ident -> r)
+foldCommand :: CommandAlgebra r -> Command -> r
+foldCommand (go, take, mark, nothing, turn, fcase, cident) = f where 
+    f Go   = go 
+    f Take = take
+    f Mark = mark 
+    f CNothing = nothing 
+    f (Turn d) = turn d
+    f (Case d alts) = fcase d alts
+    f (CIdent i) = cident i 
 
 type Environment = Map Ident Commands
 
