@@ -3,15 +3,17 @@ module Arrow where
 import Prelude hiding ((<*), (<$))
 import ParseLib.Abstract
 import Data.Map (Map)
+import Data.Maybe(mapMaybe)
 import qualified Data.Map as L
 import Control.Monad (replicateM)
+import Data.List(permutations)
 import Data.Char (isSpace)
 
 
 type Space     =  Map Pos Contents
 type Size      =  Int
 type Pos       =  (Int, Int)
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary
+data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq)
 
 parseSpace :: Parser Char Space
 parseSpace =
@@ -45,11 +47,11 @@ type Heading = ()
 
 type Program = [Rule]
 type Rule = (Ident, Commands)
-data Command = Go | Take | Mark | CNothing | Turn Dir | Case Dir Alts | CIdent Ident
-data Dir = Left | Right | Front
+data Command = Go | Take | Mark | CNothing | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
+data Dir = Left | Right | Front deriving (Eq)
 type Alts = [Alt]
 type Alt = (Pat, Commands)
-data Pat = Pat Contents | Emtpy | Underscore
+data Pat = Pat Contents | Underscore deriving (Eq)
 
 -- 4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
 -- Left recursion is more efficient in happy 
@@ -79,6 +81,52 @@ foldCommand (go, take, mark, nothing, turn, fcase, cident) = f where
     f (Turn d) = turn d
     f (Case d alts) = fcase d alts
     f (CIdent i) = cident i 
+
+-- 6
+
+checkAlgebra :: ProgramAlgebra Bool
+checkAlgebra = combineAlgebra [rulesUsedDefinedAlgebra, startsAlgebra, rulesDefinedOnceAlgebra, noFailuresAlgebra]
+
+check :: Program -> Bool
+check = foldProgram checkAlgebra
+
+combineAlgebra :: [ProgramAlgebra Bool] -> ProgramAlgebra Bool
+combineAlgebra algs p = and $ foldProgram <$> algs <*> [p]
+
+rulesUsedDefinedAlgebra :: ProgramAlgebra Bool
+rulesUsedDefinedAlgebra p = and $ elem <$> rulesUsedAlgebra p <*> [rulesDefinedAlgebra p] 
+
+rulesDefinedAlgebra :: ProgramAlgebra [Ident]
+rulesDefinedAlgebra = map fst
+
+rulesUsedAlgebra :: ProgramAlgebra [Ident]
+rulesUsedAlgebra p = map snd p >>= rulesUsedCAlgebra
+
+rulesUsedCAlgebra :: CommandsAlgebra [Ident]
+rulesUsedCAlgebra = mapMaybe (foldCommand ruleUsedCAlgebra)
+
+ruleUsedCAlgebra :: CommandAlgebra (Maybe Ident)
+ruleUsedCAlgebra = (Nothing, Nothing, Nothing, Nothing, const Nothing, \_ -> const Nothing, Just)
+
+startsAlgebra :: ProgramAlgebra Bool
+startsAlgebra = any (\(n,_) -> n == "start")
+
+rulesDefinedOnceAlgebra :: ProgramAlgebra Bool
+rulesDefinedOnceAlgebra = singles . map fst where 
+    singles [] = True
+    singles (x:xs) = x `elem` xs && singles xs
+
+noFailuresAlgebra  :: ProgramAlgebra Bool 
+noFailuresAlgebra = all (foldCommands noFailuresCAlgebra) . map snd
+
+noFailuresCAlgebra :: CommandsAlgebra Bool
+noFailuresCAlgebra = all (foldCommand noFailureCAlgebra)
+
+noFailureCAlgebra :: CommandAlgebra Bool
+noFailureCAlgebra = (True, True, True, True, const True, const $ noFailure . map fst, const True) where
+    noFailure :: [Pat] -> Bool
+    noFailure pts =  Underscore `elem` pts || pts `elem` perms 
+    perms = permutations [Pat Empty, Pat Lambda, Pat Debris, Pat Asteroid, Pat Boundary]
 
 type Environment = Map Ident Commands
 
