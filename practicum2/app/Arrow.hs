@@ -153,12 +153,17 @@ printSpace space = let
                 Just Asteroid -> 'O'
                 Just Boundary -> '#'  
 
+fmapf = flip fmap
+
 -- read and print file test 
 printSpaceIO str = do
     lines <- lines . printSpace .  fst . head . parse parseSpace <$> readFile str
     mapM_ putStrLn lines
 
--- 
+-- 8 
 
-fmapf = flip fmap
-        
+toEnvironment :: String -> Environment 
+toEnvironment s = 
+    let lexed  = undefined -- lexing  here 
+        parsed = undefined -- parsing here 
+    in  if check parsed then L.fromList parsed else L.empty
