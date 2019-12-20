@@ -141,17 +141,22 @@ data Step  =  Done  Space Pos Heading
 -- 7 
 printSpace :: Space -> String
 printSpace space = let 
-    ((sizeX,sizeY),_) = L.findMax space 
-    header = "(" ++ show sizeX ++ "," ++ show sizeY ++ ")\n" 
+    ((sizeY, sizeX),_) = L.findMax space 
+    header = "(" ++ show sizeY ++ "," ++ show sizeX ++ ")\n" 
     in (header ++) . intercalate "\n" $ fmapf [0..sizeY] $ \y -> 
         fmapf [0..sizeX] $ \x -> 
-            case space !? (x,y) of 
+            case space !? (y,x) of 
                 Nothing       -> '.'
                 Just Empty    -> '.' 
                 Just Lambda   -> '\\' 
                 Just Debris   -> '%'
                 Just Asteroid -> 'O'
                 Just Boundary -> '#'  
+
+-- read and print file test 
+printSpaceIO str = do
+    lines <- lines . printSpace .  fst . head . parse parseSpace <$> readFile str
+    mapM_ putStrLn lines
 
 -- 
 

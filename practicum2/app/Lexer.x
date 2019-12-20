@@ -9,9 +9,9 @@ $alpha = [a-zA-Z]		-- alphabetic characters
 
 tokens :-
   $white+				;
-  \-\>            { \s -> Arrow }
+  \-\>          { \s -> Arrow }
   \.            { \s -> Dot }
-  \,             { \s -> Comma }
+  \,            { \s -> Comma }
   go            { \s -> Go }
   take          { \s -> Take }
   mark          { \s -> Mark }
@@ -23,7 +23,7 @@ tokens :-
   left          { \s -> Left'}
   right         { \s -> Right'}
   front         { \s -> Front}
-  \;             { \s -> Semicolon}
+  \;            { \s -> Semicolon}
   empty         { \s -> Empty}
   Lambda        { \s -> Lambda}  
   Boundary      { \s -> Boundary}
@@ -37,8 +37,7 @@ data Token = Arrow|Dot|Comma|Go|Take|Mark|Nothing'
   |Turn|Case|Of|End
   |Left'|Right'|Front|Semicolon
   |Empty|Lambda|Debris|Asteroid|Boundary|Underscore
-  |Ident
-	deriving (Eq,Show)
+  |Ident deriving (Eq,Show)
 
 lexer = do
   s <- getContents
