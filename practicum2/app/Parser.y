@@ -32,7 +32,7 @@ import Lexer
   ident         {TokenIdent }
 
 %%
-
+-- tussen de { } moet haskell code die sutff doet
 Rule    : ident "->" Cmds   {}--{Rule ($1,$3)}
 Cmds    :Cmds ',' Cmd       {}--{Command $1 $3}
 Cmd     :go                 {}--{Go $1}
@@ -74,6 +74,7 @@ data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNot
   |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
   |TokenIdent
 	deriving (Eq,Show)
+-- Ergens moet de alex lexer vandaan worden gehaald
 -- lexer :: String -> [Token]
 -- lexer = Lexer.alexScanTokens
 
