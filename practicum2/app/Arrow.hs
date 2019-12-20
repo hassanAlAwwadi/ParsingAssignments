@@ -1,6 +1,6 @@
 module Arrow where
 
-import Prelude hiding ((<*), (<$))
+import Prelude as P hiding ((<*), (<$)) 
 import ParseLib.Abstract
 import Data.Functor((<&>))
 import Data.Maybe(mapMaybe, fromMaybe)
@@ -15,7 +15,7 @@ import Data.Char (isSpace)
 type Space     =  Map Pos Contents
 type Size      =  Int
 type Pos       =  (Int, Int)
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq)
+data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
 
 type Environment = Map Ident Commands
 
@@ -43,7 +43,7 @@ spaces = greedy (satisfy isSpace)
 
 contents :: Parser Char Contents
 contents =
-  choice (Prelude.map (\ (f,c) -> f <$ symbol c) contentsTable) <* spaces
+  choice (P.map (\ (f,c) -> f <$ symbol c) contentsTable) <* spaces
 
 contentsTable :: [(Contents,Char)]
 contentsTable =
@@ -159,9 +159,13 @@ printSpace space = let
 fmapf = flip fmap
 
 -- read and print file test 
-printSpaceIO str = do
-    lines <- lines . printSpace .  fst . head . parse parseSpace <$> readFile str
-    mapM_ putStrLn lines
+printSpaceIO :: Space -> IO () 
+printSpaceIO spa = do
+    let spalines =  lines $ printSpace spa
+    mapM_ putStrLn spalines
+
+readSpace :: String -> IO Space
+readSpace str =   fst . head . parse parseSpace <$> readFile str
 
 -- 8 
 
@@ -224,19 +228,44 @@ findInstr c alts = snd <$> case find (\a -> fst a ==c ) alts of
 
 -- 11
 
-interactive :: Environment -> ArrowState -> IO ()
-interactive = undefined
-
 batch :: Environment -> ArrowState -> (Space,Pos,Heading)
-batch env state = case until done (batch' env) (Ok state) of 
+batch env state = case until done (once env) (Ok state) of 
     Done s p c -> (s,p,c)
     Fail s -> error s
 
 
-batch' :: Environment -> Step -> Step
-batch' env (Ok st) = step env st
-batch' _ s          = s
+once :: Environment -> Step -> Step
+once env (Ok st) = step env st
+once _ s          = s
 
 done :: Step -> Bool
 done (Ok st) = False
 done _ = True
+
+
+interactive :: Environment -> ArrowState -> IO ()
+interactive env st = do 
+    final <- untilM (fmap done) (onceIO env) $ return $ Ok st
+    case final of 
+        Done s p c -> print (s,p,c)
+        Fail s -> error s
+
+
+untilM :: Monad m => (m a -> m Bool) -> (m a -> m a) -> m a -> m a
+untilM q f ma = do 
+    b <- q ma 
+    if b 
+        then ma 
+        else untilM q f (f ma)
+
+doneM :: IO Step -> IO Bool 
+doneM = fmap done 
+
+onceIO :: Environment -> IO Step -> IO Step
+onceIO env ios = do 
+    s <- ios 
+    case s of 
+        Ok st@(ArrowState sp _ _ _) -> printSpaceIO sp P.*> print  "" P.*> print  "please press enter to confirm" P.*>  getLine P.*> return (step env st)
+        st     -> return st
+
+
