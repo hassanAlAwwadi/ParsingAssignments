@@ -41,6 +41,13 @@ data Program = Functions  [(Name,FunctionCode)]
 data FunctionCode = Case String Cases | Commands
 type Cases = [(String,Commands)]
 type Name = String
+
+--4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
+-- Left recursion is more efficient in happy 
+-- because right recursion wil overflow the
+-- parse stack for long sequences of items. 
+
+
 -- These three should be defined by you
 type Ident = ()
 type Commands = ()
