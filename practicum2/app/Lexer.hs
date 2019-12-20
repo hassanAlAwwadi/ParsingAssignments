@@ -40787,39 +40787,39 @@ alex_actions = array (0 :: Int, 82)
 -- Each action has type :: String -> Token
 
 -- The token type:
-data Token = Arrow|Dot|Comma|Go|Take|Mark|Nothing'
-  |Turn|Case|Of|End
-  |Left'|Right'|Front|Semicolon
-  |Empty|Lambda|Debris|Asteroid|Boundary|Underscore
-  |Ident
+data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNothing
+  |TokenTurn|TokenCase|TokenOf|TokenEnd
+  |TokenLeft|TokenRight|TokenFront|TokenSemicolon
+  |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
+  |TokenIdent
 	deriving (Eq,Show)
 
 lexer = do
   s <- getContents
   print (alexScanTokens s)
 
-alex_action_2 =  \s -> Arrow 
-alex_action_3 =  \s -> Dot 
-alex_action_4 =  \s -> Comma 
-alex_action_5 =  \s -> Go 
-alex_action_6 =  \s -> Take 
-alex_action_7 =  \s -> Mark 
-alex_action_8 =  \s -> Nothing' 
-alex_action_9 =  \s -> Turn 
-alex_action_10 =  \s -> Case 
-alex_action_11 =  \s -> Of 
-alex_action_12 =  \s -> End
-alex_action_13 =  \s -> Left'
-alex_action_14 =  \s -> Right'
-alex_action_15 =  \s -> Front
-alex_action_16 =  \s -> Semicolon
-alex_action_17 =  \s -> Empty
-alex_action_18 =  \s -> Lambda
-alex_action_19 =  \s -> Boundary
-alex_action_20 =  \s -> Asteroid
-alex_action_21 =  \s -> Debris
-alex_action_22 =  \s -> Underscore
-alex_action_23 =  \s -> Ident
+alex_action_2 =  \s -> TokenArrow 
+alex_action_3 =  \s -> TokenDot 
+alex_action_4 =  \s -> TokenComma 
+alex_action_5 =  \s -> TokenGo 
+alex_action_6 =  \s -> TokenTake 
+alex_action_7 =  \s -> TokenMark 
+alex_action_8 =  \s -> TokenNothing 
+alex_action_9 =  \s -> TokenTurn 
+alex_action_10 =  \s -> TokenCase 
+alex_action_11 =  \s -> TokenOf 
+alex_action_12 =  \s -> TokenEnd
+alex_action_13 =  \s -> TokenLeft
+alex_action_14 =  \s -> TokenRight
+alex_action_15 =  \s -> TokenFront
+alex_action_16 =  \s -> TokenSemicolon
+alex_action_17 =  \s -> TokenEmpty
+alex_action_18 =  \s -> TokenLambda
+alex_action_19 =  \s -> TokenBoundary
+alex_action_20 =  \s -> TokenAsteroid
+alex_action_21 =  \s -> TokenDebris
+alex_action_22 =  \s -> TokenUnderscore
+alex_action_23 =  \s -> TokenIdent
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
