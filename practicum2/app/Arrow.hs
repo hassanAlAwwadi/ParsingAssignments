@@ -62,3 +62,12 @@ data Step  =  Done  Space Pos Heading
            |  Ok    ArrowState
            |  Fail  String
 
+-- 7 big nono
+-- printSpace :: Space -> Int -> String
+-- printSpace space size= "(" ++ size ++ "," ++ size ++ ")" ++ printSpace' size size
+--   where content x y = space L.! (x,y)
+--         printSpace' 0 0 = getItem (contentsTable (content 0 0)):[]
+--         printSpace' x 0 = (printSpace' x size):"\n" :getItem (contentsTable (content 0 0))
+--         printSpace' x y = (printSpace' x (y-1)) :getItem (contentsTable (content x y))
+--         getItem (contents, char) = char
+        
