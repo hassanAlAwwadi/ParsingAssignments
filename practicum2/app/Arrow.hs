@@ -2,11 +2,12 @@ module Arrow where
 
 import Prelude hiding ((<*), (<$))
 import ParseLib.Abstract
-import Data.Map (Map)
+import Data.Functor((<&>))
 import Data.Maybe(mapMaybe)
+import Data.Map (Map, (!?))
 import qualified Data.Map as L
 import Control.Monad (replicateM)
-import Data.List(permutations)
+import Data.List(permutations, intercalate)
 import Data.Char (isSpace)
 
 
@@ -137,12 +138,22 @@ data Step  =  Done  Space Pos Heading
            |  Ok    ArrowState
            |  Fail  String
 
--- 7 big nono
--- printSpace :: Space -> Int -> String
--- printSpace space size= "(" ++ size ++ "," ++ size ++ ")" ++ printSpace' size size
---   where content x y = space L.! (x,y)
---         printSpace' 0 0 = getItem (contentsTable (content 0 0)):[]
---         printSpace' x 0 = (printSpace' x size):"\n" :getItem (contentsTable (content 0 0))
---         printSpace' x y = (printSpace' x (y-1)) :getItem (contentsTable (content x y))
---         getItem (contents, char) = char
+-- 7 
+printSpace :: Space -> String
+printSpace space = let 
+    ((sizeX,sizeY),_) = L.findMax space 
+    header = "(" ++ show sizeX ++ "," ++ show sizeY ++ ")\n" 
+    in (header ++) . intercalate "\n" $ fmapf [0..sizeY] $ \y -> 
+        fmapf [0..sizeX] $ \x -> 
+            case space !? (x,y) of 
+                Nothing       -> '.'
+                Just Empty    -> '.' 
+                Just Lambda   -> '\\' 
+                Just Debris   -> '%'
+                Just Asteroid -> 'O'
+                Just Boundary -> '#'  
+
+-- 
+
+fmapf = flip fmap
         
