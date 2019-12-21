@@ -2,20 +2,26 @@ module Arrow where
 
 import Prelude as P hiding ((<*), (<$)) 
 import ParseLib.Abstract
-import Data.Functor((<&>))
+import Data.Functor as F((<&>), ($>))
 import Data.Maybe(mapMaybe, fromMaybe)
 import Data.Map (Map, (!?))
 import qualified Data.Map as L
 import Control.Monad (replicateM)
 import Data.List(permutations, intercalate, find)
 import Data.Char (isSpace)
+import Parser as PS
 
 
--- Beware: keys are (y,x) for some reason. 
+-- Beware: keys are (y,x) for some reason.
+
 type Space     =  Map Pos Contents
 type Size      =  Int
 type Pos       =  (Int, Int)
+
+{--
+definition moved to Parser.hs
 data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
+--}
 
 type Environment = Map Ident Commands
 
@@ -50,20 +56,22 @@ contentsTable =
   [  (Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
 
--- 2?
--- These three should be defined by you
+-- 2
+{--
+these can be found in the Parser.hs
+For the sake of less clicking We've left them as comments in here
 type Commands = [Command]
 type Ident = String
 type Heading = (Int,Int)
 
 type Program = [Rule]
 type Rule = (Ident, Commands)
-data Command = Go | Take | Mark | CNothing | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
-data Dir = Left | Right | Front deriving (Eq)
+data Command = Go | Take | Mark | Nothing' | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
+data Dir = Left' | Right' | Front deriving (Eq)
 type Alts = [Alt]
 type Alt = (Pat, Commands)
 data Pat = Pat Contents | Underscore deriving (Eq)
-
+--}
 -- 4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
 -- Left recursion is more efficient in happy 
 -- because right recursion wil overflow the
@@ -88,7 +96,7 @@ foldCommand (go, take, mark, nothing, turn, fcase, cident) = f where
     f Go   = go 
     f Take = take
     f Mark = mark 
-    f CNothing = nothing 
+    f Nothing' = nothing 
     f (Turn d) = turn d
     f (Case d alts) = fcase d alts
     f (CIdent i) = cident i 
@@ -171,15 +179,12 @@ readSpace str =   fst . head . parse parseSpace <$> readFile str
 
 toEnvironment :: String -> Environment 
 toEnvironment s = 
-    let lexed  = undefined -- lexing  here 
-        parsed = undefined -- parsing here 
+    let parsed = parseProgram s  
     in  if check parsed then L.fromList parsed else L.empty
 
 
 -- 9
 
-
--- data Command = Go | Take | Mark | CNothing | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
 step :: Environment -> ArrowState -> Step
 step env = step' where 
     step' (ArrowState s p h []    ) = Done s p h
@@ -190,7 +195,7 @@ step env = step' where
             _          -> Ok (ArrowState s (p `vp` h) h cs)
         Take       -> Ok (ArrowState (L.insert p Empty s) p h cs)
         Mark       -> Ok (ArrowState (L.insert p Lambda s) p h cs)
-        CNothing   -> Ok (ArrowState s p h cs)
+        Nothing'   -> Ok (ArrowState s p h cs)
         Turn d -> Ok (ArrowState s p (turn d h) cs)
         Case d as  -> let col = Pat $ fromMaybe Empty $ s !? (p `vp` turn d h) 
                           instr = findInstr col as
@@ -207,14 +212,14 @@ vp (x,y) (v,w) = (x+v,y+w)
 
 turn  :: Dir -> Heading -> Heading 
 turn Front h = h
-turn Arrow.Left (0,1) = (-1,0)
-turn Arrow.Left (-1,0) = (0,-1)
-turn Arrow.Left (0,-1) = (1,0)
-turn Arrow.Left (1,0) = (0,1)
-turn Arrow.Right (0,1) = (1,0)
-turn Arrow.Right (1,0) = (0,-1)
-turn Arrow.Right (0,-1) = (-1,0)
-turn Arrow.Right (-1,0) = (0,1)
+turn Left' (0,1) = (-1,0)
+turn Left' (-1,0) = (0,-1)
+turn Left' (0,-1) = (1,0)
+turn Left' (1,0) = (0,1)
+turn Right' (0,1) = (1,0)
+turn Right' (1,0) = (0,-1)
+turn Right' (0,-1) = (-1,0)
+turn Right' (-1,0) = (0,1)
 
 
 findInstr :: Pat -> Alts -> Maybe Commands 
@@ -265,7 +270,7 @@ onceIO :: Environment -> IO Step -> IO Step
 onceIO env ios = do 
     s <- ios 
     case s of 
-        Ok st@(ArrowState sp _ _ _) -> printSpaceIO sp P.*> print  "" P.*> print  "please press enter to confirm" P.*>  getLine P.*> return (step env st)
+        Ok st@(ArrowState sp _ _ _) -> printSpaceIO sp P.*> print  "" P.*> print  "please press enter to confirm" P.*>  getLine F.$> step env st
         st     -> return st
 
 
