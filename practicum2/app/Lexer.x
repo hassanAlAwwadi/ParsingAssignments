@@ -1,5 +1,5 @@
 {
-  module Lexer (lexer) where
+  module Lexer (lexer,Token(..)) where
 }
 
 %wrapper "basic"
@@ -31,7 +31,7 @@ tokens :-
   Asteroid      { \s -> TokenAsteroid}
   Debris        { \s -> TokenDebris}
   \_            { \s -> TokenUnderscore}
-  [$digit$alpha\+\-].* { \s -> TokenIdent}
+  [$digit$alpha\+\-].* { \s -> TokenIdent s}
 {
 -- Each action has type :: String -> Token
 
@@ -40,10 +40,8 @@ data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNot
   |TokenTurn|TokenCase|TokenOf|TokenEnd
   |TokenLeft|TokenRight|TokenFront|TokenSemicolon
   |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
-  |TokenIdent
+  |TokenIdent String
 	deriving (Eq,Show)
 
-lexer = do
-  s <- getContents
-  print (alexScanTokens s)
+lexer = alexScanTokens
 }

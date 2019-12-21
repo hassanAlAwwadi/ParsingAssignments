@@ -1,35 +1,35 @@
 {
     module Parser where
 
-import Lexer
+import Lexer as L
 }
 %name calc
-%tokentype { Token }
+%tokentype { L.Token }
 %error { parseError }
 
 %token
-  "->"         {TokenArrow }
-  '.'           {TokenDot }
-  ','           {TokenComma }
-  go            {TokenGo }
-  take          {TokenTake }
-  mark          {TokenMark }
-  nothing       {TokenNothing }
-  turn          {TokenTurn }
-  case          {TokenCase }
-  of            {TokenOf }
-  end           {TokenEnd}
-  left          {TokenLeft}
-  right         {TokenRight}
-  front         {TokenFront}
-  ';'           {TokenSemicolon}
-  empty         {TokenEmpty}
-  Lambda        {TokenLambda}  
-  Boundary      {TokenBoundary}
-  Asteroid      {TokenAsteroid}
-  Debris        {TokenDebris}
-  '_'           {TokenUnderscore}
-  ident         {TokenIdent $$}
+  "->"         {L.TokenArrow }
+  '.'           {L.TokenDot }
+  ','           {L.TokenComma }
+  go            {L.TokenGo }
+  take          {L.TokenTake }
+  mark          {L.TokenMark }
+  nothing       {L.TokenNothing }
+  turn          {L.TokenTurn }
+  case          {L.TokenCase }
+  of            {L.TokenOf }
+  end           {L.TokenEnd}
+  left          {L.TokenLeft}
+  right         {L.TokenRight}
+  front         {L.TokenFront}
+  ';'           {L.TokenSemicolon}
+  empty         {L.TokenEmpty}
+  Lambda        {L.TokenLambda}  
+  Boundary      {L.TokenBoundary}
+  Asteroid      {L.TokenAsteroid}
+  Debris        {L.TokenDebris}
+  '_'           {L.TokenUnderscore}
+  ident         {L.TokenIdent $$}
 
 %%
 
@@ -70,7 +70,7 @@ Contents    : empty             { Empty }
             | Boundary          { Boundary }
 
 {
-parseError :: [Token] -> a
+parseError :: [L.Token] -> a
 parseError _ = error "Parse error"
 type Program = [Rule] 
 type Rule = (Ident, Commands)
@@ -89,15 +89,11 @@ data Pat = Pat Contents | Underscore deriving (Eq)
 
 data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
 
-data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNothing
-  |TokenTurn|TokenCase|TokenOf|TokenEnd
-  |TokenLeft|TokenRight|TokenFront|TokenSemicolon
-  |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
-  |TokenIdent String
-	deriving (Eq,Show)
+
 -- Ergens moet de alex lexer vandaan worden gehaald
 --Todo
 
-main = lexer
+
+-- parse = getContents >>= print . calc . L.lexer
 }
 
