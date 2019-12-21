@@ -33,12 +33,12 @@ import Lexer
 
 %%
 
-Program     :Program '.' Rule       {$1 ++ [$2]}
-            
+Program     :Program '.' Rule       {$2:$1}
+            | Rule '.'                 {$1}
 Rule        : Ident "->" Commands   {($1, $3)}
 
-Commands    : Commands ',' Command       {$1 ++ [$3]}
-            
+Commands    : Commands ',' Command       {$3:$1}
+            | Command                   {[$1]}
 
 Command     : go                    {Go}
             | take                  {Take}
@@ -54,8 +54,8 @@ Dir         : left              {Left'}
             | right             {Right'}
             | front             {Front}
 
-Alts        : Alts ';' Alt      {$1 ++ [$3]}
-
+Alts        : Alts ';' Alt      {$3:$1}
+            | Alt                  {[$1]}
 Alt         : Pat "->" Commands     {($1, $3)}
 
 Pat         :Contents           {Pat $1}            
