@@ -96,9 +96,8 @@ data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNot
   |TokenIdent String
 	deriving (Eq,Show)
 -- Ergens moet de alex lexer vandaan worden gehaald
--- lexer :: String -> [Token]
--- lexer = Lexer.alexScanTokens
+--Todo
 
--- main = getContents >>= print . calc . lexer
+main = lexer
 }
 
