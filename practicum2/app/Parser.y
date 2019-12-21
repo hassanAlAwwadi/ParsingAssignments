@@ -2,6 +2,7 @@
     module Parser where
 
 import Lexer as L
+import Types as T
 }
 %name calc
 %tokentype { L.Token }
@@ -42,56 +43,37 @@ Rule        : Ident "->" Commands '.'   {($1, $3)}
 Commands    : Commands ',' Command       {$3:$1}
             | Command                   {[$1]}
 
-Command     : go                    {Go}
-            | take                  {Take}
-            | mark                  {Mark}
-            | nothing               {Nothing'}
-            | turn Dir              {Turn $2}
-            | case Dir of Alts end  {Case $2 $4}
-            | Ident                 {CIdent $1}
+Command     : go                    {T.Go}
+            | take                  {T.Take}
+            | mark                  {T.Mark}
+            | nothing               {T.Nothing'}
+            | turn Dir              {T.Turn $2}
+            | case Dir of Alts end  {T.Case $2 $4}
+            | Ident                 {T.CIdent $1}
 
 Ident       : ident            {$1}
 
-Dir         : left              {Left'}
-            | right             {Right'}
-            | front             {Front}
+Dir         : left              {T.Left'}
+            | right             {T.Right'}
+            | front             {T.Front}
 
 Alts        : Alts ';' Alt      {$3:$1}
             | Alt                  {[$1]}
 Alt         : Pat "->" Commands     {($1, $3)}
 
-Pat         :Contents           {Pat $1}            
-            | '_'               { Underscore }
+Pat         :Contents           {T.Pat $1}            
+            | '_'               {T.Underscore }
             
-Contents    : empty             { Empty }
-            | Lambda            { Lambda }
-            | Debris            { Debris }
-            | Asteroid          { Asteroid }
-            | Boundary          { Boundary }
+Contents    : empty             {T.Empty }
+            | Lambda            {T.Lambda }
+            | Debris            {T.Debris }
+            | Asteroid          {T.Asteroid }
+            | Boundary          {T.Boundary }
 
 {
 parseError :: [L.Token] -> a
 parseError _ = error "Parse error"
-type Program = [Rule] 
-type Rule = (Ident, Commands)
-type Ident = String
-type Commands = [Command]
 
-
-type Alts = [Alt]
-type Alt = (Pat, Commands)
-type Heading = (Int,Int)
-
-
-data Command = Go | Take | Mark | Nothing' | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
-data Dir = Left' | Right' | Front deriving (Eq)
-data Pat = Pat Contents | Underscore deriving (Eq)
-
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
-
-
--- Ergens moet de alex lexer vandaan worden gehaald
---Todo
 
 
 parseProgram :: String -> Program

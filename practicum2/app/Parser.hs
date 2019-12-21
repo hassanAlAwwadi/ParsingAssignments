@@ -2,7 +2,7 @@
 module Parser where
 
 import Lexer as L
-import Types 
+import Types as T
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))
@@ -254,32 +254,32 @@ happyReduction_6 _  = notHappyAtAll
 happyReduce_7 = happySpecReduce_1  8 happyReduction_7
 happyReduction_7 _
 	 =  HappyAbsSyn8
-		 (Go
+		 (T.Go
 	)
 
 happyReduce_8 = happySpecReduce_1  8 happyReduction_8
 happyReduction_8 _
 	 =  HappyAbsSyn8
-		 (Take
+		 (T.Take
 	)
 
 happyReduce_9 = happySpecReduce_1  8 happyReduction_9
 happyReduction_9 _
 	 =  HappyAbsSyn8
-		 (Mark
+		 (T.Mark
 	)
 
 happyReduce_10 = happySpecReduce_1  8 happyReduction_10
 happyReduction_10 _
 	 =  HappyAbsSyn8
-		 (Nothing'
+		 (T.Nothing'
 	)
 
 happyReduce_11 = happySpecReduce_2  8 happyReduction_11
 happyReduction_11 (HappyAbsSyn10  happy_var_2)
 	_
 	 =  HappyAbsSyn8
-		 (Turn happy_var_2
+		 (T.Turn happy_var_2
 	)
 happyReduction_11 _ _  = notHappyAtAll 
 
@@ -291,13 +291,13 @@ happyReduction_12 (_ `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn8
-		 (Case happy_var_2 happy_var_4
+		 (T.Case happy_var_2 happy_var_4
 	) `HappyStk` happyRest
 
 happyReduce_13 = happySpecReduce_1  8 happyReduction_13
 happyReduction_13 (HappyAbsSyn9  happy_var_1)
 	 =  HappyAbsSyn8
-		 (CIdent happy_var_1
+		 (T.CIdent happy_var_1
 	)
 happyReduction_13 _  = notHappyAtAll 
 
@@ -311,19 +311,19 @@ happyReduction_14 _  = notHappyAtAll
 happyReduce_15 = happySpecReduce_1  10 happyReduction_15
 happyReduction_15 _
 	 =  HappyAbsSyn10
-		 (Left'
+		 (T.Left'
 	)
 
 happyReduce_16 = happySpecReduce_1  10 happyReduction_16
 happyReduction_16 _
 	 =  HappyAbsSyn10
-		 (Right'
+		 (T.Right'
 	)
 
 happyReduce_17 = happySpecReduce_1  10 happyReduction_17
 happyReduction_17 _
 	 =  HappyAbsSyn10
-		 (Front
+		 (T.Front
 	)
 
 happyReduce_18 = happySpecReduce_3  11 happyReduction_18
@@ -354,44 +354,44 @@ happyReduction_20 _ _ _  = notHappyAtAll
 happyReduce_21 = happySpecReduce_1  13 happyReduction_21
 happyReduction_21 (HappyAbsSyn14  happy_var_1)
 	 =  HappyAbsSyn13
-		 (Pat happy_var_1
+		 (T.Pat happy_var_1
 	)
 happyReduction_21 _  = notHappyAtAll 
 
 happyReduce_22 = happySpecReduce_1  13 happyReduction_22
 happyReduction_22 _
 	 =  HappyAbsSyn13
-		 (Underscore
+		 (T.Underscore
 	)
 
 happyReduce_23 = happySpecReduce_1  14 happyReduction_23
 happyReduction_23 _
 	 =  HappyAbsSyn14
-		 (Empty
+		 (T.Empty
 	)
 
 happyReduce_24 = happySpecReduce_1  14 happyReduction_24
 happyReduction_24 _
 	 =  HappyAbsSyn14
-		 (Lambda
+		 (T.Lambda
 	)
 
 happyReduce_25 = happySpecReduce_1  14 happyReduction_25
 happyReduction_25 _
 	 =  HappyAbsSyn14
-		 (Debris
+		 (T.Debris
 	)
 
 happyReduce_26 = happySpecReduce_1  14 happyReduction_26
 happyReduction_26 _
 	 =  HappyAbsSyn14
-		 (Asteroid
+		 (T.Asteroid
 	)
 
 happyReduce_27 = happySpecReduce_1  14 happyReduction_27
 happyReduction_27 _
 	 =  HappyAbsSyn14
-		 (Boundary
+		 (T.Boundary
 	)
 
 happyNewToken action sts stk [] =
@@ -460,10 +460,6 @@ happySeq = happyDontSeq
 parseError :: [L.Token] -> a
 parseError _ = error "Parse error"
 
-
-
--- Ergens moet de alex lexer vandaan worden gehaald
---Todo
 
 
 parseProgram :: String -> Program
