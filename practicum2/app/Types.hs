@@ -32,7 +32,7 @@ type Alt = (Pat, Commands)
 type Heading = (Int,Int)
 
 
-data Command = Go | Take | Mark | Nothing' | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
-data Dir = Left' | Right' | Front deriving (Eq)
-data Pat = Pat Contents | Underscore deriving (Eq)
+data Command = Go | Take | Mark | Nothing' | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq,Show)
+data Dir = Left' | Right' | Front deriving (Eq,Show)
+data Pat = Pat Contents | Underscore deriving (Eq,Show)
 

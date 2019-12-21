@@ -6,11 +6,11 @@
 
 $digit = 0-9			-- digits
 $alpha = [a-zA-Z]		-- alphabetic characters
-
+$eol = [\n]
 tokens :-
   $white+				;
-  \n            ;
-  \-\>          { \s -> TokenArrow }
+  $eol            ;
+  "->"       { \s -> TokenArrow }
   \.            { \s -> TokenDot }
   \,            { \s -> TokenComma }
   go            { \s -> TokenGo }
@@ -31,7 +31,7 @@ tokens :-
   Asteroid      { \s -> TokenAsteroid}
   Debris        { \s -> TokenDebris}
   \_            { \s -> TokenUnderscore}
-  [$digit$alpha\+\-].* { \s -> TokenIdent s}
+  $alpha [$alpha $digit]* { \s -> TokenIdent s}
 {
 -- Each action has type :: String -> Token
 
