@@ -29,30 +29,38 @@ import Lexer
   Asteroid      {TokenAsteroid}
   Debris        {TokenDebris}
   '_'           {TokenUnderscore}
-  ident         {TokenIdent }
+  ident         {TokenIdent $$}
 
 %%
 
-Program     :Program Rule       {$1 ++ [$2]}
-            | Rule              {$1} 
-Rule        : ident "->" Commands   {($1, $3)}
-Commands    :Commands ',' Command       {$1 ++ [$3]}
-            |Command                {$1} 
-Command     :go                 {Go}
-            | take              {Take}
-            | mark              {Mark}
-            | nothing           {Nothing'}
-            | turn Dir          {Turn $2}
-            | case Dir of Alts end {Case $2 $4}
-            | Ident             {CIdent $1}
+Program     :Program '.' Rule       {$1 ++ [$2]}
+            
+Rule        : Ident "->" Commands   {($1, $3)}
+
+Commands    : Commands ',' Command       {$1 ++ [$3]}
+            
+
+Command     : go                    {Go}
+            | take                  {Take}
+            | mark                  {Mark}
+            | nothing               {Nothing'}
+            | turn Dir              {Turn $2}
+            | case Dir of Alts end  {Case $2 $4}
+            | Ident                 {CIdent $1}
+
 Ident       : ident            {$1}
+
 Dir         : left              {Left'}
             | right             {Right'}
             | front             {Front}
-Alts        : Alts ';' Alt      {$1++ [$3]}
-Alt         : Pat "->" Commands     { ($1, $3)}
+
+Alts        : Alts ';' Alt      {$1 ++ [$3]}
+
+Alt         : Pat "->" Commands     {($1, $3)}
+
 Pat         :Contents           {Pat $1}            
             | '_'               { Underscore }
+            
 Contents    : empty             { Empty }
             | Lambda            { Lambda }
             | Debris            { Debris }
@@ -62,10 +70,12 @@ Contents    : empty             { Empty }
 {
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
-type Commands = [Command]
-type Ident = String
-type Program = [Rule]
+type Program = [Rule] 
 type Rule = (Ident, Commands)
+type Ident = String
+type Commands = [Command]
+
+
 type Alts = [Alt]
 type Alt = (Pat, Commands)
 type Heading = (Int,Int)
@@ -81,7 +91,7 @@ data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNot
   |TokenTurn|TokenCase|TokenOf|TokenEnd
   |TokenLeft|TokenRight|TokenFront|TokenSemicolon
   |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
-  |TokenIdent
+  |TokenIdent String
 	deriving (Eq,Show)
 -- Ergens moet de alex lexer vandaan worden gehaald
 -- lexer :: String -> [Token]
