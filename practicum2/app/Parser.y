@@ -33,9 +33,11 @@ import Lexer
 
 %%
 
-Program     :Program '.' Rule       {$2:$1}
-            | Rule '.'                 {$1}
-Rule        : Ident "->" Commands   {($1, $3)}
+Program     : Rules    {$1}
+            
+Rules       : Rule                      {[$1]}
+            | Rules Rule                {$2:$1}
+Rule        : Ident "->" Commands '.'   {($1, $3)}
 
 Commands    : Commands ',' Command       {$3:$1}
             | Command                   {[$1]}
