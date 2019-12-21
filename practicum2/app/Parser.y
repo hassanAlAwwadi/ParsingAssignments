@@ -37,10 +37,10 @@ import Types as T
 Program     : Rules    {$1}
             
 Rules       : Rule                      {[$1]}
-            | Rules Rule                {$2:$1}
+            | Rules Rule                {$1++[$2]}
 Rule        : Ident "->" Commands '.'   {($1, $3)}
 
-Commands    : Commands ',' Command       {$3:$1}
+Commands    : Commands ',' Command       {$1++[$3]}
             | Command                   {[$1]}
 
 Command     : go                    {T.Go}
@@ -57,7 +57,7 @@ Dir         : left              {T.Left'}
             | right             {T.Right'}
             | front             {T.Front}
 
-Alts        : Alts ';' Alt      {$3:$1}
+Alts        : Alts ';' Alt      {$1++[$3]}
             | Alt                  {[$1]}
 Alt         : Pat "->" Commands     {($1, $3)}
 
