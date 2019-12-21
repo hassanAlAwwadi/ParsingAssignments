@@ -1,6 +1,9 @@
+-- By Hassan Al-Awwadi en Stephan (Stefan) van der Sman
+
 module Arrow where
 
-import Prelude as P hiding ((<*), (<$)) 
+import Prelude as P hiding ((<*), (<$))
+import Types
 import ParseLib.Abstract
 import Data.Functor as F((<&>), ($>))
 import Data.Maybe(mapMaybe, fromMaybe)
@@ -11,26 +14,6 @@ import Data.List(permutations, intercalate, find)
 import Data.Char (isSpace)
 import Parser as PS
 
-
--- Beware: keys are (y,x) for some reason.
-
-type Space     =  Map Pos Contents
-type Size      =  Int
-type Pos       =  (Int, Int)
-
-{--
-definition moved to Parser.hs
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
---}
-
-type Environment = Map Ident Commands
-
-type Stack       =  Commands
-data ArrowState  =  ArrowState Space Pos Heading Stack
-
-data Step  =  Done  Space Pos Heading
-           |  Ok    ArrowState
-           |  Fail  String
 
 parseSpace :: Parser Char Space
 parseSpace =
@@ -57,21 +40,8 @@ contentsTable =
 
 
 -- 2
-{--
-these can be found in the Parser.hs
-For the sake of less clicking We've left them as comments in here
-type Commands = [Command]
-type Ident = String
-type Heading = (Int,Int)
+-- In Types.hs
 
-type Program = [Rule]
-type Rule = (Ident, Commands)
-data Command = Go | Take | Mark | Nothing' | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
-data Dir = Left' | Right' | Front deriving (Eq)
-type Alts = [Alt]
-type Alt = (Pat, Commands)
-data Pat = Pat Contents | Underscore deriving (Eq)
---}
 -- 4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
 -- Left recursion is more efficient in happy 
 -- because right recursion wil overflow the

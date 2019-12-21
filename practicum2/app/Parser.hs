@@ -2,6 +2,7 @@
 module Parser where
 
 import Lexer as L
+import Types 
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))
@@ -458,22 +459,7 @@ happySeq = happyDontSeq
 
 parseError :: [L.Token] -> a
 parseError _ = error "Parse error"
-type Program = [Rule] 
-type Rule = (Ident, Commands)
-type Ident = String
-type Commands = [Command]
 
-
-type Alts = [Alt]
-type Alt = (Pat, Commands)
-type Heading = (Int,Int)
-
-
-data Command = Go | Take | Mark | Nothing' | Turn Dir | Case Dir Alts | CIdent Ident deriving (Eq)
-data Dir = Left' | Right' | Front deriving (Eq)
-data Pat = Pat Contents | Underscore deriving (Eq)
-
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
 
 
 -- Ergens moet de alex lexer vandaan worden gehaald
