@@ -250,7 +250,7 @@ onceIO :: Environment -> IO Step -> IO Step
 onceIO env ios = do 
     s <- ios 
     case s of 
-        Ok st@(ArrowState sp _ _ _) -> printSpaceIO sp P.*> print  "" P.*> print  "please press enter to confirm" P.*>  getLine F.$> step env st
+        Ok st@(ArrowState sp p h _) -> printSpaceIO sp P.*> print  "" P.*> print ("Position is: " ++ show p) P.*> print ("Heading is: " ++ show h) P.*> print  "please press enter to confirm" P.*>  getLine F.$> step env st
         st     -> return st
 
 
@@ -269,5 +269,5 @@ interactiveFull e s = do
     env   <- readEnvironment e
     space <- readSpace s
     let stack = concat $ env !? "start"
-        startState = ArrowState space (0,0) (1,1) stack
+        startState = ArrowState space (0,0) (1,0) stack
     interactive env startState
