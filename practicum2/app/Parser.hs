@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -w #-}
 module Parser where
 
-import Lexer
+import Lexer as L
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))
@@ -10,7 +10,7 @@ import Control.Monad (ap)
 -- parser produced by Happy Version 1.19.9
 
 data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14
-	= HappyTerminal (Token)
+	= HappyTerminal (L.Token)
 	| HappyErrorToken Int
 	| HappyAbsSyn4 t4
 	| HappyAbsSyn5 t5
@@ -301,7 +301,7 @@ happyReduction_13 (HappyAbsSyn9  happy_var_1)
 happyReduction_13 _  = notHappyAtAll 
 
 happyReduce_14 = happySpecReduce_1  9 happyReduction_14
-happyReduction_14 (HappyTerminal (TokenIdent happy_var_1))
+happyReduction_14 (HappyTerminal (L.TokenIdent happy_var_1))
 	 =  HappyAbsSyn9
 		 (happy_var_1
 	)
@@ -399,28 +399,28 @@ happyNewToken action sts stk [] =
 happyNewToken action sts stk (tk:tks) =
 	let cont i = action i i tk (HappyState action) sts stk tks in
 	case tk of {
-	TokenArrow -> cont 15;
-	TokenDot -> cont 16;
-	TokenComma -> cont 17;
-	TokenGo -> cont 18;
-	TokenTake -> cont 19;
-	TokenMark -> cont 20;
-	TokenNothing -> cont 21;
-	TokenTurn -> cont 22;
-	TokenCase -> cont 23;
-	TokenOf -> cont 24;
-	TokenEnd -> cont 25;
-	TokenLeft -> cont 26;
-	TokenRight -> cont 27;
-	TokenFront -> cont 28;
-	TokenSemicolon -> cont 29;
-	TokenEmpty -> cont 30;
-	TokenLambda -> cont 31;
-	TokenBoundary -> cont 32;
-	TokenAsteroid -> cont 33;
-	TokenDebris -> cont 34;
-	TokenUnderscore -> cont 35;
-	TokenIdent happy_dollar_dollar -> cont 36;
+	L.TokenArrow -> cont 15;
+	L.TokenDot -> cont 16;
+	L.TokenComma -> cont 17;
+	L.TokenGo -> cont 18;
+	L.TokenTake -> cont 19;
+	L.TokenMark -> cont 20;
+	L.TokenNothing -> cont 21;
+	L.TokenTurn -> cont 22;
+	L.TokenCase -> cont 23;
+	L.TokenOf -> cont 24;
+	L.TokenEnd -> cont 25;
+	L.TokenLeft -> cont 26;
+	L.TokenRight -> cont 27;
+	L.TokenFront -> cont 28;
+	L.TokenSemicolon -> cont 29;
+	L.TokenEmpty -> cont 30;
+	L.TokenLambda -> cont 31;
+	L.TokenBoundary -> cont 32;
+	L.TokenAsteroid -> cont 33;
+	L.TokenDebris -> cont 34;
+	L.TokenUnderscore -> cont 35;
+	L.TokenIdent happy_dollar_dollar -> cont 36;
 	_ -> happyError' ((tk:tks), [])
 	}
 
@@ -448,7 +448,7 @@ happyReturn = (return)
 happyThen1 m k tks = (>>=) m (\a -> k a tks)
 happyReturn1 :: () => a -> b -> HappyIdentity a
 happyReturn1 = \a tks -> (return) a
-happyError' :: () => ([(Token)], [String]) -> HappyIdentity a
+happyError' :: () => ([(L.Token)], [String]) -> HappyIdentity a
 happyError' = HappyIdentity . (\(tokens, _) -> parseError tokens)
 calc tks = happyRunIdentity happySomeParser where
  happySomeParser = happyThen (happyParse action_0 tks) (\x -> case x of {HappyAbsSyn4 z -> happyReturn z; _other -> notHappyAtAll })
@@ -456,7 +456,7 @@ calc tks = happyRunIdentity happySomeParser where
 happySeq = happyDontSeq
 
 
-parseError :: [Token] -> a
+parseError :: [L.Token] -> a
 parseError _ = error "Parse error"
 type Program = [Rule] 
 type Rule = (Ident, Commands)
@@ -475,17 +475,13 @@ data Pat = Pat Contents | Underscore deriving (Eq)
 
 data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
 
-data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNothing
-  |TokenTurn|TokenCase|TokenOf|TokenEnd
-  |TokenLeft|TokenRight|TokenFront|TokenSemicolon
-  |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
-  |TokenIdent String
-	deriving (Eq,Show)
--- Ergens moet de alex lexer vandaan worden gehaald
--- lexer :: String -> [Token]
--- lexer = Lexer.alexScanTokens
 
--- main = getContents >>= print . calc . lexer
+-- Ergens moet de alex lexer vandaan worden gehaald
+--Todo
+
+
+parseProgram :: String -> Program
+parseProgram = calc . L.lexer
 {-# LINE 1 "templates\GenericTemplate.hs" #-}
 {-# LINE 1 "templates\\\\GenericTemplate.hs" #-}
 {-# LINE 1 "<built-in>" #-}

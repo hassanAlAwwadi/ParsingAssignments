@@ -94,6 +94,7 @@ data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Sh
 --Todo
 
 
--- parse = getContents >>= print . calc . L.lexer
+parseProgram :: String -> Program
+parseProgram = calc . L.lexer
 }
 

@@ -2,7 +2,7 @@
 {-# LANGUAGE CPP #-}
 {-# LINE 1 "app/Lexer.x" #-}
 
-  module Lexer (lexer) where
+  module Lexer (lexer,Token(..)) where
 
 #if __GLASGOW_HASKELL__ >= 603
 #include "ghcconfig.h"
@@ -40760,12 +40760,10 @@ data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNot
   |TokenTurn|TokenCase|TokenOf|TokenEnd
   |TokenLeft|TokenRight|TokenFront|TokenSemicolon
   |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
-  |TokenIdent
+  |TokenIdent String
 	deriving (Eq,Show)
 
-lexer = do
-  s <- getContents
-  print (alexScanTokens s)
+lexer = alexScanTokens
 
 alex_action_2 =  \s -> TokenArrow 
 alex_action_3 =  \s -> TokenDot 
@@ -40788,7 +40786,7 @@ alex_action_19 =  \s -> TokenBoundary
 alex_action_20 =  \s -> TokenAsteroid
 alex_action_21 =  \s -> TokenDebris
 alex_action_22 =  \s -> TokenUnderscore
-alex_action_23 =  \s -> TokenIdent
+alex_action_23 =  \s -> TokenIdent s
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
