@@ -39,8 +39,14 @@ contentsTable =
   [  (Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
 
+-- 1
+-- See Lexer.x and Lexer.hs
+
 -- 2
 -- In Types.hs
+
+-- 3
+-- see Parser.y and Paser.hs
 
 -- 4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
 -- Left recursion is more efficient in happy 
@@ -103,7 +109,7 @@ startsAlgebra = any (\(n,_) -> n == "start")
 rulesDefinedOnceAlgebra :: ProgramAlgebra Bool
 rulesDefinedOnceAlgebra = singles . map fst where 
     singles [] = True
-    singles (x:xs) = x `elem` xs && singles xs
+    singles (x:xs) = x `notElem` xs && singles xs
 
 noFailuresAlgebra  :: ProgramAlgebra Bool 
 noFailuresAlgebra = all (foldCommands noFailuresCAlgebra) . map snd
@@ -152,6 +158,10 @@ toEnvironment s =
     let parsed = parseProgram s  
     in  if check parsed then L.fromList parsed else L.empty
 
+
+-- for testing
+readEnvironment :: String -> IO Environment 
+readEnvironment s = toEnvironment . unlines . lines <$> readFile s 
 
 -- 9
 
@@ -244,3 +254,20 @@ onceIO env ios = do
         st     -> return st
 
 
+batchFull :: String -> String -> IO (Space,Pos,Heading)
+batchFull e s = do 
+    env   <- readEnvironment e
+    space <- readSpace s
+    let stack = concat $ env !? "start"
+        startState = ArrowState space (0,0) (1,1) stack
+    return $ batch env startState
+
+
+
+interactiveFull :: String -> String -> IO ()
+interactiveFull e s = do 
+    env   <- readEnvironment e
+    space <- readSpace s
+    let stack = concat $ env !? "start"
+        startState = ArrowState space (0,0) (1,1) stack
+    interactive env startState
