@@ -3,6 +3,7 @@
 module Arrow where
 
 import Prelude as P hiding ((<*), (<$))
+import Control.Concurrent(threadDelay)
 import Types
 import ParseLib.Abstract
 import Data.Functor as F((<&>), ($>))
@@ -203,7 +204,7 @@ turn Right' (-1,0) = (0,1)
 
 
 findInstr :: Pat -> Alts -> Maybe Commands 
-findInstr c alts = snd <$> case find (\a -> fst a ==c ) alts of 
+findInstr c alts = snd <$> case find (\a -> fst a == c ) alts of 
     Nothing -> find (\a -> fst a == Underscore) alts 
     Just cs -> Just cs
 
@@ -228,6 +229,22 @@ done :: Step -> Bool
 done (Ok st) = False
 done _ = True
 
+-- this is like batch but it prints the current space
+batchDebug :: Environment -> ArrowState -> IO (Space,Pos,Heading)
+batchDebug env as = do 
+    next <- case as of 
+        st@(ArrowState s p h stack) -> do
+            case stack of 
+                (Go:_) -> do
+                    print stack
+                    printSpaceIO (L.insert p Ship s) 
+                    threadDelay 250000
+                _      -> return ()
+            return $ step env st
+    case next of 
+        Ok n -> batchDebug env n
+        Done s' p' h' -> print "final result:" P.*> printSpaceIO (L.insert p' Ship s') P.*> print (s',p',h') F.$> (s',p',h')
+        Fail s -> error s
 
 interactive :: Environment -> ArrowState -> IO ()
 interactive env as = do 
@@ -260,18 +277,24 @@ untilM q f ma = do
         then ma 
         else untilM q f (f ma)
 
-batchFull :: String -> String -> IO (Space,Pos,Heading)
-batchFull e s = do 
+readBatch :: String -> String -> IO (Space,Pos,Heading)
+readBatch e s = do 
     env   <- readEnvironment e
     space <- readSpace s
     let stack = concat $ env !? "start"
-        startState = ArrowState space (0,0) (1,1) stack
+        startState = ArrowState space (0,0) (1,0) stack
     return $ batch env startState
 
+readBatchDebug :: String -> String -> IO (Space,Pos,Heading)
+readBatchDebug e s = do 
+    env   <- readEnvironment e
+    space <- readSpace s
+    let stack = concat $ env !? "start"
+        startState = ArrowState space (0,0) (1,0) stack
+    batchDebug env startState
 
-
-interactiveFull :: String -> String -> IO ()
-interactiveFull e s = do 
+readInteractive:: String -> String -> IO ()
+readInteractive e s = do 
     env   <- readEnvironment e
     space <- readSpace s
     let stack = concat $ env !? "start"
