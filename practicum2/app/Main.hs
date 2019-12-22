@@ -49,14 +49,13 @@ main = do
                 "" -> batchDebug arrow startState $> ()
                 _  -> do
                     print "Running in batch mode. Only the final state will be returned"
-                    let final = batch arrow startState
-                    print final
-    return ()
-
+                    let (s', p', h') = batch arrow startState
+                    print "Final space:"
+                    printSpaceIO s'
 
 getPos :: (Int,Int) -> (Int, Int) -> IO (Int,Int)
 getPos (minY,minX) (maxY,maxX) = do
-    print $ "please provide a tuple between " ++ show (minY,minX) ++ " and " ++ show (maxY,maxX)
+    print $ "Please provide a tuple between " ++ show (minY,minX) ++ " and " ++ show (maxY,maxX)
     inp <- getLine
     case readMaybe inp of
         Nothing -> print "Sorry I didn't understand that. Please try again" *> getPos (minY,minX) (maxY,maxX)
@@ -66,7 +65,7 @@ getPos (minY,minX) (maxY,maxX) = do
 
 getHeading :: IO (Int,Int)
 getHeading  = do
-    print "please input d for down, u for up, l for left and r for right"
+    print "Please input d for down, u for up, l for left and r for right"
     inp <- map toLower <$> getLine
     case inp of
         "d" -> return (1,0)

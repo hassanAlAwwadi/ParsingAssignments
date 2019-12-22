@@ -248,7 +248,11 @@ batchDebug env as = do
             return $ step env st
     case next of 
         Ok n -> batchDebug env n
-        Done s' p' h' -> print "final result:" P.*> printSpaceIO (L.insert p' Ship s') P.*> print (s',p',h') F.$> (s',p',h')
+        Done s' p' h' -> do 
+            printSpaceIO (L.insert p' Ship s')
+            print  "final space:"
+            printSpaceIO s'
+            return (s', p', h')
         Fail s -> error s
 
 interactive :: Environment -> ArrowState -> IO ()
@@ -271,7 +275,9 @@ interactive env as = do
                 _   -> step env st
     case next of 
         Ok n -> interactive env n
-        Done s' p' h' -> print (s',p',h')
+        Done s' p' h' -> do 
+            print  "final space:"
+            printSpaceIO s'
         Fail s -> error s
 
 
@@ -301,5 +307,3 @@ readBatchDebug e s p h = readArrow e s p h batchDebug
 
 readInteractive :: String -> String -> (Int,Int) -> (Int,Int) -> IO ()
 readInteractive e s p h = readArrow e s p h interactive
-
-
