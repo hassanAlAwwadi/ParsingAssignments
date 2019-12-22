@@ -139,6 +139,7 @@ printSpace space = let
                 Just Debris   -> '%'
                 Just Asteroid -> 'O'
                 Just Boundary -> '#'
+                Just Ship     -> 'X'
 
 fmapf = flip fmap
 
@@ -166,25 +167,24 @@ readEnvironment s = toEnvironment . unlines . lines <$> readFile s
 -- 9
 
 step :: Environment -> ArrowState -> Step
-step env = step' where 
-    step' (ArrowState s p h []    ) = Done s p h
-    step' (ArrowState s p h (c:cs)) = case c of 
-        Go          -> case fromMaybe Boundary $ s !? (p `vp` h) of 
-            Asteroid -> Ok (ArrowState s p h cs)
-            Boundary -> Ok (ArrowState s p h cs)
-            _          -> Ok (ArrowState s (p `vp` h) h cs)
-        Take       -> Ok (ArrowState (L.insert p Empty s) p h cs)
-        Mark       -> Ok (ArrowState (L.insert p Lambda s) p h cs)
-        Nothing'   -> Ok (ArrowState s p h cs)
-        Turn d -> Ok (ArrowState s p (turn d h) cs)
-        Case d as  -> let col = Pat $ fromMaybe Boundary $ s !? (p `vp` turn d h) 
-                          instr = findInstr col as
-                      in  case instr of 
-                        Nothing -> Fail "No matching pattern" 
-                        Just n  -> Ok (ArrowState s p h (n++cs))
-        CIdent i   -> case env !? i of 
-            Nothing -> Fail "Undefined function" 
-            Just n  -> Ok (ArrowState s p h (n++cs))
+step env (ArrowState s p h [])     = Done s p h
+step env (ArrowState s p h (c:cs)) = case c of 
+    Go          -> case fromMaybe Boundary $ s !? (p `vp` h) of 
+        Asteroid -> Ok (ArrowState s p h cs)
+        Boundary -> Ok (ArrowState s p h cs)
+        _          -> Ok (ArrowState s (p `vp` h) h cs)
+    Take       -> Ok (ArrowState (L.insert p Empty s) p h cs)
+    Mark       -> Ok (ArrowState (L.insert p Lambda s) p h cs)
+    Nothing'   -> Ok (ArrowState s p h cs)
+    Turn d -> Ok (ArrowState s p (turn d h) cs)
+    Case d as  -> let con = Pat $ fromMaybe Boundary $ s !? (p `vp` turn d h) 
+                      instr = findInstr con as
+                  in  case instr of 
+                    Nothing -> Fail "No matching pattern" 
+                    Just n  -> Ok (ArrowState s p h (n++cs))
+    CIdent i   -> case env !? i of 
+        Nothing -> Fail "Undefined function" 
+        Just n  -> Ok (ArrowState s p h (n++cs))
 
 vp :: (Int,Int) -> (Int, Int) -> (Int,Int)
 vp (x,y) (v,w) = (x+v,y+w) 
@@ -230,10 +230,26 @@ done _ = True
 
 
 interactive :: Environment -> ArrowState -> IO ()
-interactive env st = do 
-    final <- untilM done (onceIO env) $ return $ Ok st
-    case final of 
-        Done s p c -> print (s,p,c)
+interactive env as = do 
+    next <- case as of 
+        st@(ArrowState s p h stack) -> do
+            print "current stack is: "
+            print stack
+            print "" 
+            print "current space is: "
+            printSpaceIO (L.insert p Ship s) 
+            print  "" 
+            print ("Position is: " ++ show p) 
+            print ("Heading is: " ++ show h) 
+            print  "please press enter to confirm"  
+            print  "please press C to end simulation"   
+            c <- getLine
+            return $ case c of 
+                "C" ->  Done s p h
+                _   -> step env st
+    case next of 
+        Ok n -> interactive env n
+        Done s' p' h' -> print (s',p',h')
         Fail s -> error s
 
 
@@ -243,24 +259,6 @@ untilM q f ma = do
     if b 
         then ma 
         else untilM q f (f ma)
-
-doneM :: IO Step -> IO Bool 
-doneM = fmap done 
-
-onceIO :: Environment -> IO Step -> IO Step
-onceIO env ios = do 
-    s <- ios 
-    case s of 
-        Ok st@(ArrowState sp p h _) -> 
-            printSpaceIO sp P.*> 
-            print  "" P.*> 
-            print ("Position is: " ++ show p) P.*> 
-            print ("Heading is: " ++ show h) P.*> 
-            print  "please press enter to confirm" P.*>  
-            getLine F.$> 
-            step env st
-        st     -> return st
-
 
 batchFull :: String -> String -> IO (Space,Pos,Heading)
 batchFull e s = do 
