@@ -40,8 +40,7 @@ data Token = TokenArrow|TokenDot|TokenComma|TokenGo|TokenTake|TokenMark|TokenNot
   |TokenTurn|TokenCase|TokenOf|TokenEnd
   |TokenLeft|TokenRight|TokenFront|TokenSemicolon
   |TokenEmpty|TokenLambda|TokenDebris|TokenAsteroid|TokenBoundary|TokenUnderscore
-  |TokenIdent String
-	deriving (Eq,Show)
+  |TokenIdent String deriving (Eq,Show)
 
 lexer = alexScanTokens
 }

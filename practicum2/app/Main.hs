@@ -1,4 +1,4 @@
--- By Hassan Al-Awwadi en Stephan (Stefan) van der Sman
+-- Made by Hassan Al-Awwadi (6998704) and Stephan van der Sman (6998445)
 
 module Main where
 
@@ -15,7 +15,7 @@ import System.Environment
 
 main :: IO ()
 main = do
-    print "By Hassan Al-Awwadi en Stephan (Stefan) van der Sman"
+    print "Made by Hassan Al-Awwadi (6998704) and Stephan van der Sman (6998445)"
 
     print "Please provide the .arrow file"
     arrow <-  getLine >>= readEnvironment
