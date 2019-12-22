@@ -169,9 +169,9 @@ step :: Environment -> ArrowState -> Step
 step env = step' where 
     step' (ArrowState s p h []    ) = Done s p h
     step' (ArrowState s p h (c:cs)) = case c of 
-        Go          -> case s !? (p `vp` h) of 
-            Just Asteroid -> Ok (ArrowState s p h cs)
-            Just Boundary -> Ok (ArrowState s p h cs)
+        Go          -> case fromMaybe Boundary $ s !? (p `vp` h) of 
+            Asteroid -> Ok (ArrowState s p h cs)
+            Boundary -> Ok (ArrowState s p h cs)
             _          -> Ok (ArrowState s (p `vp` h) h cs)
         Take       -> Ok (ArrowState (L.insert p Empty s) p h cs)
         Mark       -> Ok (ArrowState (L.insert p Lambda s) p h cs)
@@ -209,7 +209,8 @@ findInstr c alts = snd <$> case find (\a -> fst a ==c ) alts of
 
 
 -- 10 
--- blabla recursion. 
+-- A recursive call at the end means that at most the size of the stack is looping on itself. 
+-- A recursive call in the middle could lead to the stack blowing up in size.
 
 -- 11
 
@@ -230,15 +231,15 @@ done _ = True
 
 interactive :: Environment -> ArrowState -> IO ()
 interactive env st = do 
-    final <- untilM (fmap done) (onceIO env) $ return $ Ok st
+    final <- untilM done (onceIO env) $ return $ Ok st
     case final of 
         Done s p c -> print (s,p,c)
         Fail s -> error s
 
 
-untilM :: Monad m => (m a -> m Bool) -> (m a -> m a) -> m a -> m a
+untilM :: Monad m => (a -> Bool) -> (m a -> m a) -> m a -> m a
 untilM q f ma = do 
-    b <- q ma 
+    b <- q <$> ma 
     if b 
         then ma 
         else untilM q f (f ma)
@@ -250,7 +251,14 @@ onceIO :: Environment -> IO Step -> IO Step
 onceIO env ios = do 
     s <- ios 
     case s of 
-        Ok st@(ArrowState sp p h _) -> printSpaceIO sp P.*> print  "" P.*> print ("Position is: " ++ show p) P.*> print ("Heading is: " ++ show h) P.*> print  "please press enter to confirm" P.*>  getLine F.$> step env st
+        Ok st@(ArrowState sp p h _) -> 
+            printSpaceIO sp P.*> 
+            print  "" P.*> 
+            print ("Position is: " ++ show p) P.*> 
+            print ("Heading is: " ++ show h) P.*> 
+            print  "please press enter to confirm" P.*>  
+            getLine F.$> 
+            step env st
         st     -> return st
 
 
