@@ -282,28 +282,24 @@ untilM q f ma = do
         then ma 
         else untilM q f (f ma)
 
-readBatch :: String -> String -> IO (Space,Pos,Heading)
-readBatch e s = do 
-    env   <- readEnvironment e
-    space <- readSpace s
-    let stack = concat $ env !? "start"
-        startState = ArrowState space (0,0) (1,0) stack
-    return $ batch env startState
-
-readBatchDebug :: String -> String -> IO (Space,Pos,Heading)
-readBatchDebug e s = do 
-    env   <- readEnvironment e
-    space <- readSpace s
-    let stack = concat $ env !? "start"
-        startState = ArrowState space (0,0) (1,0) stack
-    batchDebug env startState
-
-readInteractive:: String -> String -> IO ()
-readInteractive e s = do 
-    env   <- readEnvironment e
-    space <- readSpace s
-    let stack = concat $ env !? "start"
-        startState = ArrowState space (0,0) (1,0) stack
-    interactive env startState
-
 -- the rest of 11 can be found in main.hs
+
+-- these are for debugging 
+readArrow :: String -> String -> (Int,Int) -> (Int,Int) -> (Environment -> ArrowState -> IO a) -> IO a
+readArrow e s p h f = do 
+    env   <- readEnvironment e
+    space <- readSpace s
+    let stack = concat $ env !? "start"
+        startState = ArrowState space p h stack
+    f env startState
+
+readBatch :: String -> String -> (Int,Int) -> (Int,Int) -> IO (Space,Pos,Heading)
+readBatch e s p h = readArrow e s p h (\a b -> pure $ batch a b )
+
+readBatchDebug :: String -> String -> (Int,Int) -> (Int,Int) -> IO (Space,Pos,Heading)
+readBatchDebug e s p h = readArrow e s p h batchDebug
+
+readInteractive :: String -> String -> (Int,Int) -> (Int,Int) -> IO ()
+readInteractive e s p h = readArrow e s p h interactive
+
+
