@@ -36,13 +36,14 @@ main = do
 
     print "Do you want to run in interactive mode"
     print "every single step is printed with full data, you can stop the process when you want."
-    print "Press enter for yes and anything else for No"
+    print "Press enter for Yes and anything else for No"
     g <- getLine
     case g of
         "" -> interactive arrow startState
         _  -> do
             print "Do you want to run in semi-interactive mode"
-            print "Only When the ship changes state is the space reprinted"
+            print "Only When the ship changes position is the space reprinted"
+            print "Press enter for Yes and anything else for No"
             g' <- getLine
             case g' of
                 "" -> batchDebug arrow startState $> ()
