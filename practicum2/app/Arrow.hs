@@ -177,7 +177,7 @@ step env = step' where
         Mark       -> Ok (ArrowState (L.insert p Lambda s) p h cs)
         Nothing'   -> Ok (ArrowState s p h cs)
         Turn d -> Ok (ArrowState s p (turn d h) cs)
-        Case d as  -> let col = Pat $ fromMaybe Empty $ s !? (p `vp` turn d h) 
+        Case d as  -> let col = Pat $ fromMaybe Boundary $ s !? (p `vp` turn d h) 
                           instr = findInstr col as
                       in  case instr of 
                         Nothing -> Fail "No matching pattern" 
