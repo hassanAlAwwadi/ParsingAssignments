@@ -305,3 +305,5 @@ readInteractive e s = do
     let stack = concat $ env !? "start"
         startState = ArrowState space (0,0) (1,0) stack
     interactive env startState
+
+-- the rest of 11 can be found in main.hs
