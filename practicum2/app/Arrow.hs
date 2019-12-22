@@ -6,9 +6,8 @@ import Prelude as P hiding ((<*), (<$))
 import Control.Concurrent(threadDelay)
 import Types
 import ParseLib.Abstract
-import Data.Functor as F((<&>), ($>))
 import Data.Maybe(mapMaybe, fromMaybe)
-import Data.Map (Map, (!?))
+import Data.Map ((!?))
 import qualified Data.Map as L
 import Control.Monad (replicateM)
 import Data.List(permutations, intercalate, find)
@@ -74,12 +73,12 @@ foldCommands = ($)
 
 type CommandAlgebra r = (r, r, r, r, Dir -> r, Dir -> Alts -> r, Ident -> r)
 foldCommand :: CommandAlgebra r -> Command -> r
-foldCommand (go, take, mark, nothing, turn, fcase, cident) = f where 
+foldCommand (go, take', mark, nothing, turn', fcase, cident) = f where 
     f Go   = go 
-    f Take = take
+    f Take = take'
     f Mark = mark 
     f Nothing' = nothing 
-    f (Turn d) = turn d
+    f (Turn d) = turn' d
     f (Case d alts) = fcase d alts
     f (CIdent i) = cident i 
 
@@ -147,6 +146,7 @@ printSpace space = let
                 Just Boundary -> '#'
                 Just Ship     -> 'X'
 
+fmapf :: [a] -> (a -> b) -> [b]
 fmapf = flip fmap
 
 -- read and print file test 
@@ -173,7 +173,7 @@ readEnvironment s = toEnvironment . unlines . lines <$> readFile s
 -- 9
 
 step :: Environment -> ArrowState -> Step
-step env (ArrowState s p h [])     = Done s p h
+step _ (ArrowState s p h [])     = Done s p h
 step env (ArrowState s p h (c:cs)) = case c of 
     Go          -> case fromMaybe Boundary $ s !? (p `vp` h) of 
         Asteroid -> Ok (ArrowState s p h cs)
@@ -206,6 +206,7 @@ turn Right' (0,1) = (1,0)
 turn Right' (1,0) = (0,-1)
 turn Right' (0,-1) = (-1,0)
 turn Right' (-1,0) = (0,1)
+turn _ _ = error "not currently facing a cardinal direction"
 
 
 findInstr :: Pat -> Alts -> Maybe Commands 
@@ -224,6 +225,7 @@ batch :: Environment -> ArrowState -> (Space,Pos,Heading)
 batch env state = case until done (once env) (Ok state) of 
     Done s p c -> (s,p,c)
     Fail s -> error s
+    Ok _   -> error "until stopped prematurely for some reason"
 
 
 once :: Environment -> Step -> Step
@@ -231,14 +233,14 @@ once env (Ok st) = step env st
 once _ s          = s
 
 done :: Step -> Bool
-done (Ok st) = False
+done (Ok _) = False
 done _ = True
 
 -- this is like batch but it prints the current space
 batchDebug :: Environment -> ArrowState -> IO (Space,Pos,Heading)
 batchDebug env as = do 
     next <- case as of 
-        st@(ArrowState s p h stack) -> do
+        st@(ArrowState s p _ stack) -> do
             case stack of 
                 (Go:_) -> do
                     print stack
@@ -275,7 +277,7 @@ interactive env as = do
                 _   -> step env st
     case next of 
         Ok n -> interactive env n
-        Done s' p' h' -> do 
+        Done s' _ _ -> do 
             print  "final space:"
             printSpaceIO s'
         Fail s -> error s

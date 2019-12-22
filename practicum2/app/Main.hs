@@ -2,14 +2,12 @@
 
 module Main where
 
-import Lib
 import Arrow
 import Types
 import Data.Map(findMax, (!?))
 import Data.Functor(($>))
 import Text.Read(readMaybe)
 import Data.Char(toLower)
-import System.Environment
 
 -- 11
 
@@ -49,7 +47,7 @@ main = do
                 "" -> batchDebug arrow startState $> ()
                 _  -> do
                     print "Running in batch mode. Only the final state will be returned"
-                    let (s', p', h') = batch arrow startState
+                    let (s', _, _) = batch arrow startState
                     print "Final space:"
                     printSpaceIO s'
 
