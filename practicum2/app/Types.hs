@@ -7,8 +7,8 @@ type Space     =  Map Pos Contents
 type Size      =  Int
 type Pos       =  (Int, Int)
 
-
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary deriving (Eq, Show)
+-- Ship added for printing convenience 
+data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary | Ship deriving (Eq, Show)
 
 
 type Environment = Map Ident Commands
