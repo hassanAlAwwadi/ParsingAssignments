@@ -49,10 +49,15 @@ contentsTable =
 -- 3
 -- see Parser.y and Paser.hs
 
--- 4 WIP What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
--- Left recursion is more efficient in happy 
--- because right recursion wil overflow the
--- parse stack for long sequences of items. 
+-- 4 What can you find out from the Happy documentation over Happy’s handlingof left-recursive and right-recursive grammars.  How does this compare to the situationwhen using parser combinators?  Include your answer in a clearly marked comment.
+-- Happy prefers left recursion over right recursion
+-- this is because happy makes use of a stack to keep track of the already parsed phrases
+-- with a right recursive grammar a stack may grow indefinitely in happy
+-- left recursive grammars are reduced as soon as possible and thus more efficient
+--
+--With parser combinators left recusion is a bad practice because it may make the code not terminate
+--
+--TLDR; Use left recursion and happy will be happy
 
 -- 5
 type ProgramAlgebra r = [Rule] -> r
