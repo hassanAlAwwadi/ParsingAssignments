@@ -1,5 +1,6 @@
 module CSharpLex where
 
+import Prelude hiding ((<*), (*>), (<$), ($>))
 import Data.Char
 import Control.Monad
 import ParseLib.Abstract

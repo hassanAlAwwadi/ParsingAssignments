@@ -39,7 +39,8 @@ packages:
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
-# extra-deps: []
+extra-deps: 
+- uu-tc-2015.1.1@sha256:c41c7e3e07e169c82b0467a301fcda2002ea76903d779a7d18e62b68dde0e4cb
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

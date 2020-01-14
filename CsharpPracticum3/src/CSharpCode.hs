@@ -1,6 +1,7 @@
 module CSharpCode where
 
-import Prelude hiding (LT, GT, EQ)
+import Prelude hiding ((<*), (*>), (<$), ($>), LT, GT, EQ)
+
 import Data.Map as M
 import CSharpLex
 import CSharpGram
