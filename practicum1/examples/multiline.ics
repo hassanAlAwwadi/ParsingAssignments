@@ -8,5 +8,6 @@ DTSTART:20111205T170000Z
 DTEND:20111205T210000Z
 SUMMARY:This is a very long description th
  at spans over multiple lines.
+ yeah.
 END:VEVENT
 END:VCALENDAR

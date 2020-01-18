@@ -28,7 +28,7 @@ fMembDecl d = []
 
 fMembMeth :: Type -> Token -> [Decl] -> Code -> Code
 fMembMeth t (LowerId x) ps s = [LABEL x] ++ s ++ [RET]
-
+-- fMembMeth t (LowerId "print") ps s = ps ++ [TRAP 0]
 fStatDecl :: Decl -> Code
 fStatDecl d = []
 
