@@ -67,6 +67,12 @@ lexUpperId = (\x xs -> UpperId (x:xs)) <$> satisfy isUpper <*> greedy (satisfy i
 lexConstInt :: Parser Char Token
 lexConstInt = (ConstInt . read) <$> greedy1 (satisfy isDigit)
 
+lexConstBool :: Parser Char Token
+lexConstBool = choice 
+        [ConstBool True <$ (token "true") 
+        ,ConstBool False <$ (token "false") 
+        ]
+
 lexEnum :: (String -> Token) -> [String] -> Parser Char Token
 lexEnum f xs = f <$> choice (map keyword xs)
 
@@ -87,6 +93,7 @@ lexToken = greedyChoice
              , lexEnum StdType stdTypes
              , lexEnum Operator operators
              , lexConstInt
+             , lexConstBool
              , lexLowerId
              , lexUpperId
              ]
