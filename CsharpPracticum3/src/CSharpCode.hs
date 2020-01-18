@@ -57,6 +57,7 @@ fExprCon :: Token -> ValueOrAddress -> Code
 fExprCon (ConstInt n) va = [LDC n]
 fExprCon (ConstBool True) va = [LDC 1]
 fExprCon (ConstBool False) va = [LDC 0]
+fExprCon (ConstChar c) va = [LDC (fromEnum c)]
 
 fExprVar :: Token -> ValueOrAddress -> Code
 fExprVar (LowerId x) va = let loc = 37 in case va of
