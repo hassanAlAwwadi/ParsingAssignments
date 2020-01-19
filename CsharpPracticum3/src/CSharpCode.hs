@@ -28,7 +28,8 @@ fMembDecl d = []
 
 fMembMeth :: Type -> Token -> [Decl] -> Code -> Code
 fMembMeth t (LowerId x) ps s = [LABEL x] ++ s ++ [RET]
--- fMembMeth t (LowerId "print") ps s = ps ++ [TRAP 0]
+
+--fMembMeth t (LowerId "print") ps s = fStatExpr ps ++ [TRAP 0]
 fStatDecl :: Decl -> Code
 fStatDecl d = []
 
@@ -65,8 +66,16 @@ fExprVar (LowerId x) va = let loc = 37 in case va of
                                               Address  ->  [LDLA loc]
 
 fExprOp :: Token -> (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> ValueOrAddress -> Code
-fExprOp (Operator "=") e1 e2 va = e2 Value ++ [LDS 0] ++ e1 Address ++ [STA 0]
-fExprOp (Operator op)  e1 e2 va = e1 Value ++ e2 Value ++ [opCodes ! op]
+fExprOp (Operator op)  e1 e2 va |op=="*"||op=="/"||op=="%"= f
+                                |op=="+"||op=="-"= f
+                                |op=="<"||op==">"||op=="<="||op==">="= f
+                                |op=="=="||op=="!="= f
+                                |op=="^"= f
+                                |op=="&&"= f
+                                |op=="||"= f
+                                |op=="=" =  e2 Value ++ [LDS 0] ++ e1 Address ++ [STA 0]
+                                |otherwise = f
+                                where f = e1 Value ++ e2 Value ++ [opCodes ! op]
 
 
 opCodes :: Map String Instr
