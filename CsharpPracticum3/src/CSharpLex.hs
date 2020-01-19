@@ -83,6 +83,9 @@ lexEnum f xs = f <$> choice (map keyword xs)
 lexTerminal :: Parser Char Token
 lexTerminal = choice [t <$ keyword s | (t,s) <- terminals]
 
+lexComment :: Parser Char Token
+lexComment = pack (token "//") (greedy (satisfy (/="\n"))) (token "\n")
+
 
 stdTypes :: [String]
 stdTypes = ["int", "long", "double", "float", "byte", "short", "bool", "char"]
@@ -99,6 +102,7 @@ lexToken = greedyChoice
              , lexConstInt
              , lexConstBool
              , lexConstChar
+             , lexComment
              , lexLowerId
              , lexUpperId
              ]
