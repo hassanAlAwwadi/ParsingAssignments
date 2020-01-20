@@ -21,6 +21,7 @@ data Token = POpen    | PClose      -- parentheses     ()
            | ConstInt  Int
            | ConstBool Bool
            | ConstChar Char
+           | Comment
            deriving (Eq, Show)
 
 keyword :: String -> Parser Char String
@@ -83,8 +84,8 @@ lexEnum f xs = f <$> choice (map keyword xs)
 lexTerminal :: Parser Char Token
 lexTerminal = choice [t <$ keyword s | (t,s) <- terminals]
 
-lexComment :: Parser Char Token
-lexComment = pack (token "//") (greedy (satisfy (/="\n"))) (token "\n")
+lexComment :: Parser Char [String]
+lexComment = greedy ((pack (token "//") (greedy (satisfy (/='\n'))) (token "\n")) <* lexWhiteSpace) 
 
 
 stdTypes :: [String]
@@ -95,14 +96,13 @@ operators = ["+", "-", "*", "/", "%", "&&", "||", "^", "<=", "<", ">=", ">", "==
 
 
 lexToken :: Parser Char Token
-lexToken = greedyChoice
+lexToken =  lexComment *> greedyChoice
              [ lexTerminal
              , lexEnum StdType stdTypes
              , lexEnum Operator operators
              , lexConstInt
              , lexConstBool
              , lexConstChar
-             , lexComment
              , lexLowerId
              , lexUpperId
              ]
@@ -132,6 +132,7 @@ sConst  = satisfy isConst
           isConst (ConstBool _) = True
           isConst (ConstChar _) = True
           isConst _             = False
+
 
 sOperator :: Parser Token Token
 sOperator = satisfy isOperator
