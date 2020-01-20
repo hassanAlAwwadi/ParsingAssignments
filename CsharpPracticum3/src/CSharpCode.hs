@@ -75,7 +75,7 @@ fExprOp (Operator op)  e1 e2 va |op=="*"||op=="/"||op=="%"= f
                                 |op=="||"= f
                                 |op=="=" =  e2 Value ++ [LDS 0] ++ e1 Address ++ [STA 0]
                                 |otherwise = f
-                                where f =  reverse (e2 Value  ++ e1 Value) ++ [opCodes ! op]
+                                where f =  e1 Value  ++ [opCodes ! op] ++ e2 Value 
                                       f2 = e1 Value ++ e2 Value ++ [opCodes ! op]
 
 
