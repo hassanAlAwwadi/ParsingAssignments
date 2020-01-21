@@ -49,7 +49,7 @@ terminals =
     , ( KeyIf     , "if"     )
     , ( KeyElse   , "else"   )
     , ( KeyWhile  , "while"  )
-    , ( KeyFor    , "for"  )
+    , ( KeyFor    , "for"    )
     , ( KeyReturn , "return" )
     , ( KeyTry    , "try"    )
     , ( KeyCatch  , "catch"  )

@@ -49,13 +49,13 @@ fStatWhile e s1 = [BRA n] ++ s1 ++ c ++ [BRT (-(n + k + 2))]
         (n, k) = (codeSize s1, codeSize c)
 
 fStatWhile' :: (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> Code -> Code
-fStatWhile' e e2 s1 = [BRA n] ++ s1 ++ c ++ e2 Value ++ [BRT (-(n + k + 2))]
+fStatWhile' e e2 s1 = [BRA n] ++ e2 Value ++ s1 ++ c  ++ [BRT (-(n + k + 2))]
     where
         c = e Value
         (n, k) = (codeSize s1, codeSize c)
 
 fStatFor :: (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> Code -> Code
-fStatFor e e2 e3 s1 = e Value ++ fStatWhile' e2 e3 s1
+fStatFor e e2 e3 s1 = fStatWhile' e2 e3 s1
     
 
 fStatReturn :: (ValueOrAddress -> Code) -> Code
