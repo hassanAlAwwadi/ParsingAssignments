@@ -4,6 +4,8 @@ class Hello
     
     void main()
     {
+        int c;
+        c = 8 - 2 - 4;
         bool a;
         a = true;
         int b;
@@ -33,6 +35,14 @@ class Hello
         {
             r = r*t;
             t = t+1;
+        }
+        for(i=0; i<10 ; i++){
+
+        }
+        int i;
+        i = 0;
+        while(i<10){
+            i++;
         }
         return r;
    }

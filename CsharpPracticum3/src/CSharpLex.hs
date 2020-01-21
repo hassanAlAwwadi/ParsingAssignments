@@ -14,6 +14,7 @@ data Token = POpen    | PClose      -- parentheses     ()
            | KeyWhile | KeyReturn
            | KeyTry   | KeyCatch
            | KeyClass | KeyVoid
+           | KeyFor
            | StdType   String       -- the 8 standard types
            | Operator  String       -- the 15 operators
            | UpperId   String       -- uppercase identifiers
@@ -21,7 +22,6 @@ data Token = POpen    | PClose      -- parentheses     ()
            | ConstInt  Int
            | ConstBool Bool
            | ConstChar Char
-           | Comment
            deriving (Eq, Show)
 
 keyword :: String -> Parser Char String
@@ -49,6 +49,7 @@ terminals =
     , ( KeyIf     , "if"     )
     , ( KeyElse   , "else"   )
     , ( KeyWhile  , "while"  )
+    , ( KeyFor    , "for"  )
     , ( KeyReturn , "return" )
     , ( KeyTry    , "try"    )
     , ( KeyCatch  , "catch"  )
