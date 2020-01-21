@@ -43,19 +43,19 @@ fStatIf e s1 s2 = c ++ [BRF (n1 + 2)] ++ s1 ++ [BRA n2] ++ s2
         (n1, n2) = (codeSize s1, codeSize s2)
 
 fStatWhile :: (ValueOrAddress -> Code) -> Code -> Code
-fStatWhile e s1 = fExpr[BRA n] ++ s1 ++ c ++ [BRT (-(n + k + 2))]
+fStatWhile e s1 = [BRA n] ++ s1 ++ c ++ [BRT (-(n + k + 2))]
     where
         c = e Value
         (n, k) = (codeSize s1, codeSize c)
 
-fStatWhile :: (ValueOrAddress -> Code)-> (ValueOrAddress -> Code) -> Code -> Code
-fStatWhile e e2 s1 = fExpr[BRA n] ++ s1 ++ c ++ e2 ++ [BRT (-(n + k + 2))]
+fStatWhile' :: (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> Code -> Code
+fStatWhile' e e2 s1 = [BRA n] ++ s1 ++ c ++ e2 Value ++ [BRT (-(n + k + 2))]
     where
         c = e Value
         (n, k) = (codeSize s1, codeSize c)
 
-fStatFor :: (ValueOrAddress -> Code) -> Code -> Code
-fStatFor e e2 e3 s1 = fExpr e ++ fStatWhile e2 e3 s1
+fStatFor :: (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> (ValueOrAddress -> Code) -> Code -> Code
+fStatFor e e2 e3 s1 = e Value ++ fStatWhile' e2 e3 s1
     
 
 fStatReturn :: (ValueOrAddress -> Code) -> Code
@@ -66,7 +66,7 @@ fStatBlock = concat
 
 fExprCon :: Token -> ValueOrAddress -> Code
 fExprCon (ConstInt n) va = [LDC n]
-fExprCon (ConstBool True) va = [LDC -1]
+fExprCon (ConstBool True) va = [LDC (-1)]
 fExprCon (ConstBool False) va = [LDC 0]
 fExprCon (ConstChar c) va = [LDC (fromEnum c)]
 
