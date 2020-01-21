@@ -54,6 +54,7 @@ sOperator0 = satisfy isOperator
             "*" -> True
             "/" -> True
             "%" -> True
+            _   -> False
           isOperator _            = False
 
 -- ["+", "-", "*", "/", "%", "&&", "||", "^", "<=", "<", ">=", ">", "==", "!=", "="]
@@ -66,6 +67,7 @@ sOperator1 = satisfy isOperator
     where isOperator (Operator c) = case c of 
             "+" -> True
             "-" -> True
+            _   -> False
           isOperator _            = False
 
 pExpr2 ::  Parser Token Expr
@@ -78,6 +80,7 @@ sOperator2 = satisfy isOperator
             "<"  -> True 
             "<=" -> True 
             ">=" -> True 
+            _   -> False
           isOperator _            = False
 
 pExpr3 ::  Parser Token Expr
@@ -88,6 +91,7 @@ sOperator3 = satisfy isOperator
     where isOperator (Operator c) = case c of 
             "==" -> True
             "!=" -> True
+            _   -> False
           isOperator _            = False
 
 pExpr4 ::  Parser Token Expr
@@ -129,7 +133,7 @@ pMember =  MemberD <$> pDeclSemi
 
 pStatDecl :: Parser Token Stat
 pStatDecl =  pStat
-         <|> StatDecl <$> pDeclSemi
+        <|> StatDecl <$> pDeclSemi
 
 pStat :: Parser Token Stat
 pStat =  StatExpr <$> pExpr0 <*  sSemi
