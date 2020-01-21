@@ -45,10 +45,7 @@ pExprSimple =  ExprConst <$> sConst
            <|> parenthesised pExpr0
 
 pExpr0 :: Parser Token Expr
-pExpr0 = chainr pExprSimple (ExprOper <$> satisfy isOperator) where 
-    isOperator (Operator _) = True
-    isOperator _ = False
---pExpr0 = chainr pExpr1 (ExprOper <$> sOperator0)
+pExpr0 = chainr pExpr1 (ExprOper <$> sOperator0)
 
 sOperator0 :: Parser Token Token
 sOperator0 = satisfy isOperator
@@ -82,7 +79,7 @@ sOperator2 = satisfy isOperator
             "<"  -> True 
             "<=" -> True 
             ">=" -> True 
-            _   -> False
+            _    -> False
           isOperator _            = False
 
 pExpr3 ::  Parser Token Expr
@@ -121,13 +118,12 @@ sOperator6 = satisfy isOperator
           isOperator _               = False
 
 pExpr7 ::  Parser Token Expr
-pExpr7 = chainl pExprSimple (ExprOper <$> sOperator6)
+pExpr7 = chainl pExprSimple (ExprOper <$> sOperator7)
 
 sOperator7 :: Parser Token Token
 sOperator7 = satisfy isOperator
     where isOperator (Operator "=") = True
           isOperator _              = False
-
 
 pMember :: Parser Token Member
 pMember =  MemberD <$> pDeclSemi
