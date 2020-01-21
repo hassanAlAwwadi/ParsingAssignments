@@ -43,10 +43,84 @@ braced        p = pack (symbol COpen) p (symbol CClose)
 pExprSimple :: Parser Token Expr
 pExprSimple =  ExprConst <$> sConst
            <|> ExprVar   <$> sLowerId
-           <|> parenthesised pExpr
+           <|> parenthesised pExpr0
 
-pExpr :: Parser Token Expr
-pExpr = chainr pExprSimple (ExprOper <$> sOperator)
+pExpr0 :: Parser Token Expr
+pExpr0 = chainr pExpr1 (ExprOper <$> sOperator0)
+
+sOperator0 :: Parser Token Token
+sOperator0 = satisfy isOperator
+    where isOperator (Operator c) = case c of 
+            "*" -> True
+            "/" -> True
+            "%" -> True
+          isOperator _            = False
+
+-- ["+", "-", "*", "/", "%", "&&", "||", "^", "<=", "<", ">=", ">", "==", "!=", "="]
+
+pExpr1 ::  Parser Token Expr
+pExpr1 = chainr pExpr2 (ExprOper <$> sOperator1)
+
+sOperator1 :: Parser Token Token
+sOperator1 = satisfy isOperator
+    where isOperator (Operator c) = case c of 
+            "+" -> True
+            "-" -> True
+          isOperator _            = False
+
+pExpr2 ::  Parser Token Expr
+pExpr2 = chainl pExpr3 (ExprOper <$> sOperator2)
+
+sOperator2 :: Parser Token Token
+sOperator2 = satisfy isOperator
+    where isOperator (Operator c) = case c of 
+            ">"  -> True
+            "<"  -> True 
+            "<=" -> True 
+            ">=" -> True 
+          isOperator _            = False
+
+pExpr3 ::  Parser Token Expr
+pExpr3 = chainl pExpr4 (ExprOper <$> sOperator3)
+
+sOperator3 :: Parser Token Token
+sOperator3 = satisfy isOperator
+    where isOperator (Operator c) = case c of 
+            "==" -> True
+            "!=" -> True
+          isOperator _            = False
+
+pExpr4 ::  Parser Token Expr
+pExpr4 = chainl pExpr5 (ExprOper <$> sOperator4)
+
+sOperator4 :: Parser Token Token
+sOperator4 = satisfy isOperator
+    where isOperator (Operator "^") = True
+          isOperator _              = False
+
+pExpr5 ::  Parser Token Expr
+pExpr5 = chainl pExpr6 (ExprOper <$> sOperator5)
+
+sOperator5 :: Parser Token Token
+sOperator5 = satisfy isOperator
+    where isOperator (Operator "&&") = True
+          isOperator _               = False
+
+pExpr6 ::  Parser Token Expr
+pExpr6 = chainl pExpr7 (ExprOper <$> sOperator6)
+
+sOperator6 :: Parser Token Token
+sOperator6 = satisfy isOperator
+    where isOperator (Operator "||") = True
+          isOperator _               = False
+
+pExpr7 ::  Parser Token Expr
+pExpr7 = chainl pExprSimple (ExprOper <$> sOperator6)
+
+sOperator7 :: Parser Token Token
+sOperator7 = satisfy isOperator
+    where isOperator (Operator "=") = True
+          isOperator _              = False
 
 
 pMember :: Parser Token Member
@@ -58,11 +132,11 @@ pStatDecl =  pStat
          <|> StatDecl <$> pDeclSemi
 
 pStat :: Parser Token Stat
-pStat =  StatExpr <$> pExpr <*  sSemi
-     <|> StatIf     <$ symbol KeyIf     <*> parenthesised pExpr <*> pStat <*> optionalElse
-     <|> StatWhile  <$ symbol KeyWhile  <*> parenthesised pExpr <*> pStat
-     <|> StatFor    <$ symbol KeyFor    <*> parenthesised pExpr <*> pStat
-     <|> StatReturn <$ symbol KeyReturn <*> pExpr               <*  sSemi
+pStat =  StatExpr <$> pExpr0 <*  sSemi
+     <|> StatIf     <$ symbol KeyIf     <*> parenthesised pExpr0 <*> pStat <*> optionalElse
+     <|> StatWhile  <$ symbol KeyWhile  <*> parenthesised pExpr0 <*> pStat
+     <|> StatFor    <$ symbol KeyFor    <*> parenthesised pExpr0 <*> pStat
+     <|> StatReturn <$ symbol KeyReturn <*> pExpr0               <*  sSemi
      <|> pBlock
      where optionalElse = option ((\_ x -> x) <$> symbol KeyElse <*> pStat) (StatBlock [])
 
