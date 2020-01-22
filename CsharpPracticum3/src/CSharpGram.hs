@@ -137,7 +137,7 @@ pStatDecl =  pStat
 pStat :: Parser Token Stat
 pStat =  StatExpr <$> pExpr0 <*  sSemi
      <|> StatIf     <$ symbol KeyIf     <*> parenthesised pExpr0 <*> pStat <*> optionalElse
-     <|> StatFor  <$ symbol KeyFor  <* symbol POpen <*> pExpr0 <*> pExpr0 <*> pExpr0 <* symbol PClose  <*> pStat
+     <|> StatFor  <$ symbol KeyFor  <* symbol POpen <*> pExpr0 <*  sSemi <*> pExpr0 <*  sSemi <*> pExpr0 <*  sSemi <* symbol PClose  <*> pStat
      <|> StatWhile    <$ symbol KeyWhile    <*> parenthesised pExpr0 <*> pStat
      <|> StatReturn <$ symbol KeyReturn <*> pExpr0               <*  sSemi
      <|> pBlock

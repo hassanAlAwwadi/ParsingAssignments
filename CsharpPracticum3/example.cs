@@ -4,12 +4,25 @@ class Hello
     
     void main()
     {
-        int c;
-        c = 8 - 2 - 4;
+        //test// 
+        //dit is een test
         bool a;
+        //test// 
+        //dit is een test
         a = true;
+        //test// 
+        //dit is een test   
         int b;
-        b = 1 + 1;
+        b = 0;
+        while(b < 10){
+            b= b+ 1;            
+        }
+        b = 3333;
+        int k;
+        for(k = 0; k<10; k = k +1;){
+            
+        }
+        b = 3333;
     }
     
     int square( int x )
@@ -36,14 +49,8 @@ class Hello
             r = r*t;
             t = t+1;
         }
-        for(i=0; i<10 ; i++){
-
-        }
-        int i;
-        i = 0;
-        while(i<10){
-            i++;
-        }
+       
         return r;
+        
    }
 }
