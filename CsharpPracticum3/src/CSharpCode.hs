@@ -8,6 +8,7 @@ import CSharpLex
 import CSharpGram
 import CSharpAlgebra
 import SSM
+import Debug.Trace
 
 
 data ValueOrAddress = Value | Address
@@ -74,7 +75,7 @@ fExprCon (ConstBool False) _ _ = [LDC 0]
 fExprCon (ConstChar c) _ _ = [LDC (fromEnum c)]
 
 fExprVar :: Token -> Env -> ValueOrAddress -> Code
-fExprVar (LowerId x) env va = let loc = 37 {--env ! x--} in case va of
+fExprVar (LowerId x) env va = let loc = trace (show (x, M.toList env)) (env ! x) in  case va of 
                                               Value    ->  [LDL  loc]
                                               Address  ->  [LDLA loc]
 

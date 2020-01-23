@@ -2,14 +2,11 @@ class Hello
 {
     int g;
     void aaaa(int i){
-        int b;
-        print(1);
-        b = i;
-        return b;
+        print(2+3);
+        return i;
     }
     void main()
     {
-        int q;
-        q = aaaa(1);
+        print(aaaa(1));
     }
 }
