@@ -1,6 +1,7 @@
 module Main where
 
 import Prelude hiding ((<*), (*>), (<$), ($>))
+import qualified Data.Map as M
 import System.Environment
 import System.FilePath
 
@@ -34,9 +35,11 @@ processFile :: (FilePath, FilePath) -> IO ()
 processFile (infile, outfile) =
   do
     xs <- readFile infile
-    writeFile outfile (process xs)
+    writeFile outfile (formatCode $ process xs M.empty)
     putStrLn (outfile ++ " written")
-  where process = formatCode
-                . foldCSharp codeAlgebra
+  where process = foldCSharp codeAlgebra 
                 . start (pClass <* eof)
                 . start lexicalScanner
+
+
+

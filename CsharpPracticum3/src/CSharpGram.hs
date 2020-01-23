@@ -24,6 +24,7 @@ data Stat = StatDecl   Decl
 data Expr = ExprConst  Token
           | ExprVar    Token
           | ExprOper   Token Expr Expr
+          | ExprFun    Token [Expr]
           deriving Show
 
 data Decl = Decl Type Token
@@ -42,8 +43,14 @@ braced        p = pack (symbol COpen) p (symbol CClose)
 
 pExprSimple :: Parser Token Expr
 pExprSimple =  ExprConst <$> sConst
+           <|> pFuncCall
            <|> ExprVar   <$> sLowerId
            <|> parenthesised pExpr0
+
+pFuncCall :: Parser Token Expr 
+pFuncCall = ExprFun <$> sLowerId <*> methArgList 
+    where
+        methArgList = parenthesised (option (listOf pExpr0 (symbol Comma)) [])
 
 pExpr0 :: Parser Token Expr
 pExpr0 = chainr pExpr1 (ExprOper <$> sOperator0)
