@@ -1,6 +1,9 @@
 	Bsr main
 	HALT
 aaaa:
+	LDC 1
+	TRAP 0
+	AJS -1
 	LDL 37
 	LDS 0
 	LDLA 37

@@ -79,10 +79,13 @@ fExprVar (LowerId x) env va = let loc = 37 {--env ! x--} in case va of
                                               Address  ->  [LDLA loc]
 
 fExprFun :: Token -> [Env -> ValueOrAddress -> Code] -> Env -> ValueOrAddress -> Code
+fExprFun (LowerId "print") vars env va = evald ++ [TRAP 0] where 
+    evald = vars >>= (($ va) . ($ env))
 fExprFun (LowerId name) vars env va = LINK len : cde ++ [Bsr name {-- might need Bsa?--}, UNLINK] where 
     len = length vars
     enr = zip (fmap (($ va) . ($ env)) vars)  [0..]
     cde = enr >>= (\(c,n) -> c ++ [STL n]) 
+    
 
 fExprOp :: Token -> (Env -> ValueOrAddress -> Code) -> (Env -> ValueOrAddress -> Code) -> Env -> ValueOrAddress -> Code
 fExprOp (Operator "=") e1 e2 env va = e2 env Value ++ [LDS 0]      ++ e1 env Address ++ [STA 0]
