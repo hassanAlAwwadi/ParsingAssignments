@@ -30,7 +30,7 @@ fMembDecl :: Decl -> Env -> Code
 fMembDecl _ _ = []
 
 fMembMeth :: Type -> Token -> [Decl] -> (Env -> Code) -> Env -> Code
-fMembMeth t (LowerId x) ps s env = [LABEL x, LINK varcount] ++ s newEnv ++ [UNLINK, RET] where 
+fMembMeth t (LowerId x) ps s env = [LABEL x] ++ s newEnv ++ [RET] where 
     varcount = length ps
     (newEnv,_)   = foldr go (env, 0) ps  
     go (Decl _ (LowerId name)) (e,n) = (M.insert name n e, n+1) 
@@ -62,7 +62,7 @@ fStatFor e e2 e3 s1 env = c3 ++ [BRA n] ++ s1 env ++ c ++ c2 ++ [BRT (-(n + k + 
         (n, k) = (codeSize $ s1 env, codeSize c + codeSize c2)
 
 fStatReturn :: (Env -> ValueOrAddress -> Code) -> Env -> Code
-fStatReturn e env= e env Value ++ [pop] ++ [RET]
+fStatReturn e env = e env Value ++ [pop] ++ [RET]
 
 fStatBlock  :: [Env -> Code] -> Env -> Code
 fStatBlock c e = concatMap ($ e) c
@@ -79,9 +79,10 @@ fExprVar (LowerId x) env va = let loc = 37 {--env ! x--} in case va of
                                               Address  ->  [LDLA loc]
 
 fExprFun :: Token -> [Env -> ValueOrAddress -> Code] -> Env -> ValueOrAddress -> Code
-fExprFun (LowerId name) vars env va = [Bsr name {-- might need Bsa?--}] where 
-    enr = zip (fmap (($ va) . ($ env)) vars)  [1..]
-    cde = fmap (\(c,n) -> c ++ [STL n]) enr
+fExprFun (LowerId name) vars env va = LINK len : cde ++ [Bsr name {-- might need Bsa?--}, UNLINK] where 
+    len = length vars
+    enr = zip (fmap (($ va) . ($ env)) vars)  [0..]
+    cde = enr >>= (\(c,n) -> c ++ [STL n]) 
 
 fExprOp :: Token -> (Env -> ValueOrAddress -> Code) -> (Env -> ValueOrAddress -> Code) -> Env -> ValueOrAddress -> Code
 fExprOp (Operator "=") e1 e2 env va = e2 env Value ++ [LDS 0]      ++ e1 env Address ++ [STA 0]

@@ -1,7 +1,6 @@
 	Bsr main
 	HALT
 aaaa:
-	LINK 1
 	LDL 37
 	LDS 0
 	LDLA 37
@@ -10,14 +9,15 @@ aaaa:
 	LDL 37
 	AJS -1
 	RET
-	UNLINK
 	RET
 main:
-	LINK 0
+	LINK 1
+	LDC 1
+	STL 0
 	Bsr aaaa
+	UNLINK
 	LDS 0
 	LDLA 37
 	STA 0
 	AJS -1
-	UNLINK
 	RET
