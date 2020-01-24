@@ -87,7 +87,11 @@ fExprFun (LowerId name) vars env va = evald ++ [LINK 0, Bsr name {-- might need 
 
 
 fExprOp :: Token -> (Env -> ValueOrAddress -> Code) -> (Env -> ValueOrAddress -> Code) -> Env -> ValueOrAddress -> Code
-fExprOp (Operator "=") e1 e2 env va = e2 env Value ++ [LDS 0]      ++ e1 env Address ++ [STA 0]                            
+fExprOp (Operator "=") e1 e2 env va = e2 env Value ++ [LDS 0]      ++ e1 env Address ++ [STA 0]
+fExprOp (Operator "||")  e1 e2 env _ | any ( == formatInstr (LDC (-1))) (map formatInstr (e1 env Value))  =  [LDC (-1)]
+                                  | otherwise =  e1 env Value ++ e2 env Value ++ [opCodes ! "||"] 
+fExprOp (Operator "&&")  e1 e2 env _ | any ( == formatInstr (LDC 0)) (map formatInstr (e1 env Value)) =  [LDC 0]
+                                  | otherwise =  e1 env Value ++ e2 env Value ++ [opCodes ! "&&"]                                  
 fExprOp (Operator op)  e1 e2 env va = e1 env Value ++ e2 env Value ++ [opCodes ! op]
 
 

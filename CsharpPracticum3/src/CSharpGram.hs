@@ -84,7 +84,7 @@ sOperator2 = satisfy isOperator
 pExpr3 ::  Parser Token Expr
 pExpr3 = chainl pExpr4 (ExprOper <$> sOperator3)
 
-Operator3 :: Parser Token Token
+sOperator3 :: Parser Token Token
 sOperator3 = satisfy isOperator
     where isOperator (Operator "&&") = True
           isOperator _               = False
@@ -107,7 +107,7 @@ sOperator5 = satisfy isOperator
             "==" -> True
             "!=" -> True
             _   -> False
-          isOperator _            = Falses
+          isOperator _            = False
 pExpr6 ::  Parser Token Expr
 pExpr6 = chainl pExpr7 (ExprOper <$> sOperator6)
 
