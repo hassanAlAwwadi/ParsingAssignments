@@ -71,35 +71,24 @@ pExpr1 = chainr pExpr2 (ExprOper <$> sOperator1)
 
 sOperator1 :: Parser Token Token
 sOperator1 = satisfy isOperator
-    where isOperator (Operator c) = case c of 
-            "+" -> True
-            "-" -> True
-            _   -> False
-          isOperator _            = False
-
+    where isOperator (Operator "=") = True
+          isOperator _              = False
 pExpr2 ::  Parser Token Expr
 pExpr2 = chainl pExpr3 (ExprOper <$> sOperator2)
 
 sOperator2 :: Parser Token Token
 sOperator2 = satisfy isOperator
-    where isOperator (Operator c) = case c of 
-            ">"  -> True
-            "<"  -> True 
-            "<=" -> True 
-            ">=" -> True 
-            _    -> False
-          isOperator _            = False
+    where isOperator (Operator "||") = True
+          isOperator _               = False
 
 pExpr3 ::  Parser Token Expr
 pExpr3 = chainl pExpr4 (ExprOper <$> sOperator3)
 
-sOperator3 :: Parser Token Token
+Operator3 :: Parser Token Token
 sOperator3 = satisfy isOperator
-    where isOperator (Operator c) = case c of 
-            "==" -> True
-            "!=" -> True
-            _   -> False
-          isOperator _            = False
+    where isOperator (Operator "&&") = True
+          isOperator _               = False
+
 
 pExpr4 ::  Parser Token Expr
 pExpr4 = chainl pExpr5 (ExprOper <$> sOperator4)
@@ -114,24 +103,36 @@ pExpr5 = chainl pExpr6 (ExprOper <$> sOperator5)
 
 sOperator5 :: Parser Token Token
 sOperator5 = satisfy isOperator
-    where isOperator (Operator "&&") = True
-          isOperator _               = False
-
+    where isOperator (Operator c) = case c of 
+            "==" -> True
+            "!=" -> True
+            _   -> False
+          isOperator _            = Falses
 pExpr6 ::  Parser Token Expr
 pExpr6 = chainl pExpr7 (ExprOper <$> sOperator6)
 
 sOperator6 :: Parser Token Token
 sOperator6 = satisfy isOperator
-    where isOperator (Operator "||") = True
-          isOperator _               = False
+    where isOperator (Operator c) = case c of 
+            ">"  -> True
+            "<"  -> True 
+            "<=" -> True 
+            ">=" -> True 
+            _    -> False
+          isOperator _            = False
+
 
 pExpr7 ::  Parser Token Expr
 pExpr7 = chainl pExprSimple (ExprOper <$> sOperator7)
 
 sOperator7 :: Parser Token Token
 sOperator7 = satisfy isOperator
-    where isOperator (Operator "=") = True
-          isOperator _              = False
+    where isOperator (Operator c) = case c of 
+            "+" -> True
+            "-" -> True
+            _   -> False
+          isOperator _            = False
+
 
 pMember :: Parser Token Member
 pMember =  MemberD <$> pDeclSemi
