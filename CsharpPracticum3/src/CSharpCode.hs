@@ -63,7 +63,7 @@ fStatFor e e2 e3 s1 env = c3 ++ [BRA n] ++ s1 env ++ c ++ c2 ++ [BRT (-(n + k + 
         (n, k) = (codeSize $ s1 env, codeSize c + codeSize c2)
 
 fStatReturn :: (Env -> ValueOrAddress -> Code) -> Env -> Code
-fStatReturn e env = e env Value ++ [pop] ++ [RET]
+fStatReturn e env = e env Value ++ [STR R4, RET]
 
 fStatBlock  :: [Env -> Code] -> Env -> Code
 fStatBlock c e = concatMap ($ e) c
@@ -82,7 +82,7 @@ fExprVar (LowerId x) env va = let loc = trace (show (x, M.toList env)) (env ! x)
 fExprFun :: Token -> [Env -> ValueOrAddress -> Code] -> Env -> ValueOrAddress -> Code
 fExprFun (LowerId "print") vars env va = evald ++ [TRAP 0, AJS 1] where
     evald = vars >>= (($ va) . ($ env))
-fExprFun (LowerId name) vars env va = evald ++ [LINK 0, Bsr name {-- might need Bsa?--}, UNLINK] where
+fExprFun (LowerId name) vars env va = evald ++ [LINK 0, Bsr name {-- might need Bsa?--}, UNLINK] ++ map (const pop) vars ++ [LDR R4] where
     evald = vars >>= (($ va) . ($ env)) 
 
 
