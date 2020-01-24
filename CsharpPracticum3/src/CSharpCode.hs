@@ -14,7 +14,7 @@ import Debug.Trace
 data ValueOrAddress = Value | Address
     deriving Show
 
-type Env = M.Map String Int 
+type Env = M.Map String Int
 
 codeAlgebra :: CSharpAlgebra (Env -> Code) (Env -> Code) (Env -> Code) (Env -> ValueOrAddress -> Code)
 codeAlgebra =
@@ -31,10 +31,10 @@ fMembDecl :: Decl -> Env -> Code
 fMembDecl _ _ = []
 
 fMembMeth :: Type -> Token -> [Decl] -> (Env -> Code) -> Env -> Code
-fMembMeth t (LowerId x) ps s env = [LABEL x] ++ s newEnv ++ [RET] where 
+fMembMeth t (LowerId x) ps s env = [LABEL x] ++ s newEnv ++ [RET] where
     varcount = length ps
-    (newEnv,_)   = foldr go (env, 0) ps  
-    go (Decl _ (LowerId name)) (e,n) = (M.insert name n e, n+1) 
+    (newEnv,_) = foldr go (env, -varcount) ps
+    go (Decl _ (LowerId name)) (e,n) = (M.insert name n e, n+1)
 
 fStatDecl :: Decl -> Env -> Code
 fStatDecl _ _ = []
@@ -75,23 +75,21 @@ fExprCon (ConstBool False) _ _ = [LDC 0]
 fExprCon (ConstChar c) _ _ = [LDC (fromEnum c)]
 
 fExprVar :: Token -> Env -> ValueOrAddress -> Code
-fExprVar (LowerId x) env va = let loc = trace (show (x, M.toList env)) (env ! x) in  case va of 
+fExprVar (LowerId x) env va = let loc = trace (show (x, M.toList env)) (env ! x) in  case va of
                                               Value    ->  [LDL  loc]
                                               Address  ->  [LDLA loc]
 
 fExprFun :: Token -> [Env -> ValueOrAddress -> Code] -> Env -> ValueOrAddress -> Code
-fExprFun (LowerId "print") vars env va = evald ++ [TRAP 0] where 
+fExprFun (LowerId "print") vars env va = evald ++ [TRAP 0] where
     evald = vars >>= (($ va) . ($ env))
-fExprFun (LowerId name) vars env va = LINK len : cde ++ [Bsr name {-- might need Bsa?--}, UNLINK] where 
-    len = length vars
-    enr = zip (fmap (($ va) . ($ env)) vars)  [0..]
-    cde = enr >>= (\(c,n) -> c ++ [STL n]) 
-    
+fExprFun (LowerId name) vars env va = evald ++ [LINK 0, Bsr name {-- might need Bsa?--}, UNLINK] where
+    evald = vars >>= (($ va) . ($ env)) 
+
 
 fExprOp :: Token -> (Env -> ValueOrAddress -> Code) -> (Env -> ValueOrAddress -> Code) -> Env -> ValueOrAddress -> Code
 fExprOp (Operator "=") e1 e2 env va = e2 env Value ++ [LDS 0]      ++ e1 env Address ++ [STA 0]
 fExprOp (Operator op)  e1 e2 env va = e1 env Value ++ e2 env Value ++ [opCodes ! op]
-                                
+
 
 
 opCodes :: M.Map String Instr
@@ -99,4 +97,5 @@ opCodes = M.fromList [ ("+", ADD), ("-", SUB),  ("*", MUL), ("/", DIV), ("%", MO
                    , ("<=", LE), (">=", GE),  ("<", LT),  (">", GT),  ("==", EQ)
                    , ("!=", NE), ("&&", AND), ("||", OR), ("^", XOR)
                    ]
+
 

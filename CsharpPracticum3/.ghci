@@ -1,0 +1,3 @@
+ghcid "--command=stack ghci"
+:set -isrc
+:load Main
