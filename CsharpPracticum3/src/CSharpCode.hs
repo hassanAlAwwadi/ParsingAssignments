@@ -33,8 +33,8 @@ fMembDecl _ _ = []
 fMembMeth :: Type -> Token -> [Decl] -> (Env -> Code) -> Env -> Code
 fMembMeth t (LowerId x) ps s env = [LABEL x] ++ s newEnv ++ [RET] where
     varcount = length ps
-    (newEnv,_) = foldr go (env, -varcount) ps
-    go (Decl _ (LowerId name)) (e,n) = (M.insert name n e, n+1)
+    (newEnv,_) = foldl go (env, -varcount) ps
+    go (e,n) (Decl _ (LowerId name)) = (M.insert name n e, n+1)
 
 fStatDecl :: Decl -> Env -> Code
 fStatDecl _ _ = []
@@ -80,7 +80,7 @@ fExprVar (LowerId x) env va = let loc = trace (show (x, M.toList env)) (env ! x)
                                               Address  ->  [LDLA loc]
 
 fExprFun :: Token -> [Env -> ValueOrAddress -> Code] -> Env -> ValueOrAddress -> Code
-fExprFun (LowerId "print") vars env va = evald ++ [TRAP 0] where
+fExprFun (LowerId "print") vars env va = evald ++ [TRAP 0, AJS 1] where
     evald = vars >>= (($ va) . ($ env))
 fExprFun (LowerId name) vars env va = evald ++ [LINK 0, Bsr name {-- might need Bsa?--}, UNLINK] where
     evald = vars >>= (($ va) . ($ env)) 
