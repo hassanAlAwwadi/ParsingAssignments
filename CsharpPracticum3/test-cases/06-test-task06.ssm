@@ -1,0 +1,33 @@
+	Bsr main
+	HALT
+main:
+	LINK 1
+	LDC 5
+	LDS 0
+	LDLA 1
+	STA 0
+	AJS -1
+	Bsr anotherXisTwo
+	LDR R4
+	AJS -1
+	LDL 1
+	LDL 1
+	MUL
+	TRAP 0
+	AJS 1
+	AJS -1
+	UNLINK
+	RET
+anotherXisTwo:
+	LINK 1
+	LDC 2
+	LDS 0
+	LDLA 1
+	STA 0
+	AJS -1
+	LDL 1
+	TRAP 0
+	AJS 1
+	AJS -1
+	UNLINK
+	RET

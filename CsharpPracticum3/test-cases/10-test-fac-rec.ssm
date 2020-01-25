@@ -1,0 +1,35 @@
+	Bsr main
+	HALT
+main:
+	LINK 0
+	LDC 10
+	Bsr fac
+	AJS -1
+	LDR R4
+	TRAP 0
+	AJS 1
+	AJS -1
+	UNLINK
+	RET
+fac:
+	LINK 0
+	LDL -2
+	LDC 1
+	EQ
+	BRF 8
+	LDC 1
+	STR R4
+	UNLINK
+	RET
+	BRA 18
+	LDL -2
+	LDL -2
+	LDC 1
+	SUB
+	Bsr fac
+	AJS -1
+	LDR R4
+	MUL
+	STR R4
+	UNLINK
+	RET
