@@ -2,7 +2,7 @@ module SSM where
 
 
 data Reg = PC | SP | MP | R3 | R4 | R5 | R6 | R7
-   deriving Show
+   deriving (Show,Eq)
 
 r0, r1, r2, r3, r4, r5, r6, r7 :: Reg
 r0 = PC
@@ -31,7 +31,7 @@ data Instr
     | SWP | SWPR Reg | SWPRR Reg Reg | LDRR Reg Reg  -- Various swaps
     | JSR | TRAP Int | NOP | HALT                    -- Other instructions
     | LABEL String                                   -- Pseudo-instruction for generating a label
-    deriving Show
+    deriving (Show,Eq)
 
 type Code = [Instr]
 
