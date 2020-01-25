@@ -1,9 +1,11 @@
+{-# LANGUAGE LambdaCase #-}
 module CSharpCode where
 
 import Prelude hiding ((<*), (*>), (<$), LT, GT, EQ)
 
 import qualified Data.Map as M
 import Data.Function
+import Data.List(nub)
 import Data.Map ((!))
 import CSharpLex
 import CSharpGram
@@ -11,20 +13,18 @@ import CSharpAlgebra
 import SSM
 import Debug.Trace
 
-
 data ValueOrAddress = Value | Address
     deriving Show
 
 type Env = M.Map String Int
 
 -- just a function to clean up generated code somewhat
-clean :: Code -> Code 
-clean (RET:_) = [RET]
-clean [] = []
-clean (AJS n:AJS m:r) 
-    | n + m == 0 = clean r
-    | otherwise  = clean (AJS (n+m) : r)
-clean (n:m) = n : clean m
+-- only used to clean up member methods tbh.
+-- because they suffered from double RETS and double UNLINKS at the end
+cleanFunc :: Code -> Code 
+cleanFunc [UNLINK,RET,UNLINK,RET] = [UNLINK,RET]
+cleanFunc [] = []
+cleanFunc (n:m) = n : cleanFunc m
 
 
 codeAlgebra :: CSharpAlgebra (Env -> Code) (Env -> Code) (Env -> (Code,Env)) (Env -> ValueOrAddress -> Code)
@@ -42,15 +42,14 @@ fMembDecl :: Decl -> Env -> Code
 fMembDecl _ _ = []
 
 fMembMeth :: Type -> Token -> [Decl] -> (Env -> (Code, Env)) -> Env -> Code
-fMembMeth t (LowerId x) ps s env = [LABEL x, LINK stmcount] ++ statements where
+fMembMeth t (LowerId x) ps s env = cleanFunc $ [LABEL x, LINK declCount] ++ statements  ++ [UNLINK, RET] where
     varcount = length ps
     -- the arguments are stored before the markpointer. first argument is at -2, because -1 is used for the return address.
     (newEnv,_) = foldl go (env, (-varcount)-1) ps 
     go (e,n) (Decl _ (LowerId name)) = (M.insert name n e, n+1)
-    (statements,_) = (\(a,b) -> (clean (a ++ [UNLINK, RET]) ,b)) $ s newEnv
-    -- every line of code is a potential declaration of a var. 
-    -- except for the UNLINK and RET at the end
-    stmcount = length statements - 2 
+    (statements,_) = s newEnv
+    -- LDLAs are vars, so we count unique ldlas to know the total number of vars
+    declCount = length $ nub $ filter (\case (LDLA n) -> True; _ -> False) statements
 
 fStatDecl :: Decl -> Env -> (Code, Env)
 fStatDecl (Decl _ (LowerId name)) env = ([], M.insert name (maximum (0 : M.elems env) +1) env)
@@ -94,7 +93,7 @@ fStatFor e e2 e3 s env = (con ++ [BRA n] ++ d ++ c ++ c2 ++ [BRT (-(n + k + 2))]
         (d,_) = s env
         (n, k) = (codeSize d, codeSize c + codeSize c2)
 
-fStatReturn :: (Env -> ValueOrAddress -> Code)-> Env -> (Code, Env)
+fStatReturn :: (Env -> ValueOrAddress -> Code) -> Env -> (Code, Env)
 fStatReturn e env = (e env Value ++ [STR R4, UNLINK, RET], env)
 
 fStatBlock  :: [Env -> (Code, Env)] -> Env -> (Code, Env)
@@ -105,12 +104,12 @@ fStatBlock codegens env = (finalcode,finalenv) where
 
 fExprCon :: Token -> a -> b -> Code
 fExprCon (ConstInt n) _ _ = [LDC n]
-fExprCon (ConstBool True) _ _ = [LDC (-1)]
+fExprCon (ConstBool True) _ _ = [LDC 1]
 fExprCon (ConstBool False) _ _ = [LDC 0]
 fExprCon (ConstChar c) _ _ = [LDC (fromEnum c)]
 
 fExprVar :: Token -> Env -> ValueOrAddress -> Code
-fExprVar (LowerId x) env va = let loc = trace (show (x, M.toList env)) (env ! x) in  case va of
+fExprVar (LowerId x) env va = let loc = env ! x in  case va of
                                               Value    ->  [LDL  loc]
                                               Address  ->  [LDLA loc]
 
@@ -123,10 +122,10 @@ fExprFun (LowerId name) vars env va = evald ++ Bsr name : map (const pop) vars +
 
 fExprOp :: Token -> (Env -> ValueOrAddress -> Code) -> (Env -> ValueOrAddress -> Code) -> Env -> ValueOrAddress -> Code
 fExprOp (Operator "=") e1 e2 env va = e2 env Value ++ [LDS 0]      ++ e1 env Address ++ [STA 0]
-fExprOp (Operator "||")  e1 e2 env _ | any ( == formatInstr (LDC (-1))) (map formatInstr (e1 env Value))  =  [LDC (-1)]
-                                  | otherwise =  e1 env Value ++ e2 env Value ++ [opCodes ! "||"] 
-fExprOp (Operator "&&")  e1 e2 env _ | any ( == formatInstr (LDC 0)) (map formatInstr (e1 env Value)) =  [LDC 0]
-                                  | otherwise =  e1 env Value ++ e2 env Value ++ [opCodes ! "&&"]                                  
+fExprOp (Operator "||")  e1 e2 env _ | formatInstr (LDC (-1)) `elem` map formatInstr (e1 env Value)  =  [LDC (-1)]
+                                     | otherwise =  e1 env Value ++ e2 env Value ++ [opCodes ! "||"] 
+fExprOp (Operator "&&")  e1 e2 env _ | formatInstr (LDC 0) `elem` map formatInstr (e1 env Value) =  [LDC 0]
+                                     | otherwise =  e1 env Value ++ e2 env Value ++ [opCodes ! "&&"]                                  
 fExprOp (Operator op)  e1 e2 env va = e1 env Value ++ e2 env Value ++ [opCodes ! op]
 
 
