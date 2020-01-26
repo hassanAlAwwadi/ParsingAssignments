@@ -1,3 +1,4 @@
+--practicum 3 by Hassan Al Awadi, Stefan van der Sman
 module CSharpAlgebra where
 
 import CSharpLex
